@@ -1,0 +1,33 @@
+{
+  "name": "reservalab-faen-ufgd",
+  "version": "1.0.0",
+  "description": "Sistema de Reservas de Laboratórios e Equipamentos - FAEN/UFGD",
+  "main": "index.html",
+  "scripts": {
+    "dev": "live-server public --port=3000",
+    "build": "npm run copy-assets",
+    "copy-assets": "cp -r src/* public/",
+    "deploy": "vercel --prod"
+  },
+  "keywords": [
+    "reservas",
+    "laboratorios",
+    "equipamentos",
+    "ufgd",
+    "faen"
+  ],
+  "author": "Carlos Henrique C. de Oliveira - Tec. Laboratório de Informática FAEN/UFGD",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seu-usuario/reservalab-faen-ufgd.git"
+  },
+  "homepage": "https://reservalab-faen-ufgd.vercel.app"
+}
+

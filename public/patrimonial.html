@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Patrimonial - ReservaLAB FAEN/UFGD</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="assets/css/style.css" rel="stylesheet">
+    
+    <style>
+        .reserva-em-andamento {
+            animation: pulse 2s infinite;
+            border: 2px solid #28a745 !important;
+            background-color: rgba(40, 167, 69, 0.1) !important;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+        
+        .relogio-cuiaba {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .status-online {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: #28a745;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        
+        .fc-event-em-andamento {
+            background-color: #28a745 !important;
+            border-color: #1e7e34 !important;
+            animation: pulse-event 2s infinite;
+        }
+        
+        @keyframes pulse-event {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-success text-white py-3 shadow-sm">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <img src="assets/images/logo-ufgd.png" alt="UFGD" class="me-3" style="height: 50px;">
+                        <div>
+                            <h1 class="h4 mb-0">
+                                <i class="bi bi-shield-check"></i> Dashboard Patrimonial
+                            </h1>
+                            <small class="opacity-75">Divisão de Proteção Patrimonial - FAEN/UFGD</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="d-flex align-items-center justify-content-end gap-3">
+                        <div class="text-center">
+                            <div class="relogio-cuiaba" id="relogioCuiaba">--:--:--</div>
+                            <small class="opacity-75">
+                                <span class="status-online"></span> Cuiabá/MT
+                            </small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='index.html'">
+                                <i class="bi bi-house"></i> Início
+                            </button>
+                            <button class="btn btn-outline-light btn-sm" onclick="window.location.href='calendario.html'">
+                                <i class="bi bi-calendar3"></i> Calendário
+                            </button>
+                            <button class="btn btn-light btn-sm" onclick="mostrarModalReport()">
+                                <i class="bi bi-exclamation-triangle"></i> Reportar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container-fluid my-4">
+        <!-- Controles do Calendário -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-calendar3"></i> Calendário de Reservas
+                                </h5>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="alterarVisualizacaoCalendario('dayGridMonth')">
+                                        <i class="bi bi-calendar-month"></i> Mês
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="alterarVisualizacaoCalendario('timeGridWeek')">
+                                        <i class="bi bi-calendar-week"></i> Semana
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="alterarVisualizacaoCalendario('timeGridDay')">
+                                        <i class="bi bi-calendar-day"></i> Dia
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="calendarioPatrimonial"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabelas de Reservas -->
+        <div class="row">
+            <!-- Reservas de Hoje -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-calendar-check"></i> Reservas de Hoje
+                            <span class="badge bg-light text-primary ms-2" id="contadorHoje">0</span>
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Horário</th>
+                                        <th>Recurso</th>
+                                        <th>Solicitante</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaReservasHoje">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">
+                                            <i class="bi bi-calendar-x"></i><br>
+                                            Carregando reservas...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reservas de Amanhã -->
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-calendar-plus"></i> Reservas de Amanhã
+                            <span class="badge bg-light text-info ms-2" id="contadorAmanha">0</span>
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Horário</th>
+                                        <th>Recurso</th>
+                                        <th>Solicitante</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaReservasAmanha">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-4">
+                                            <i class="bi bi-calendar-x"></i><br>
+                                            Carregando reservas...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estatísticas Rápidas -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-graph-up"></i> Estatísticas do Dia
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="border rounded p-3">
+                                    <h4 class="text-primary mb-1" id="totalReservasHoje">0</h4>
+                                    <small class="text-muted">Total Hoje</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3">
+                                    <h4 class="text-success mb-1" id="reservasEmAndamento">0</h4>
+                                    <small class="text-muted">Em Andamento</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3">
+                                    <h4 class="text-warning mb-1" id="proximasReservas">0</h4>
+                                    <small class="text-muted">Próximas (2h)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3">
+                                    <h4 class="text-info mb-1" id="totalReservasAmanha">0</h4>
+                                    <small class="text-muted">Amanhã</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Report -->
+    <div class="modal fade" id="modalReport" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle"></i> Reportar Eventualidade
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formReport">
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Atenção:</strong> Este formulário é exclusivo para a Divisão de Proteção Patrimonial reportar eventualidades relacionadas às reservas.
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="tipoEventualidade" class="form-label">Tipo de Eventualidade *</label>
+                            <select class="form-select" id="tipoEventualidade" required>
+                                <option value="">Selecione...</option>
+                                <option value="nao_compareceu">Solicitante não compareceu</option>
+                                <option value="problema_acesso">Problema de acesso</option>
+                                <option value="equipamento_danificado">Equipamento danificado</option>
+                                <option value="uso_inadequado">Uso inadequado do espaço/equipamento</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="protocoloRelacionado" class="form-label">Protocolo da Reserva (opcional)</label>
+                            <input type="text" class="form-control" id="protocoloRelacionado" 
+                                   placeholder="Ex: 202510000001">
+                            <div class="form-text">Informe o protocolo se o report estiver relacionado a uma reserva específica</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="descricaoEventualidade" class="form-label">Descrição da Eventualidade *</label>
+                            <textarea class="form-control" id="descricaoEventualidade" rows="4" 
+                                      placeholder="Descreva detalhadamente a eventualidade..." required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="senhaReport" class="form-label">Senha de Autorização *</label>
+                            <input type="password" class="form-control" id="senhaReport" 
+                                   placeholder="Senha exclusiva da Divisão de Proteção Patrimonial" required>
+                            <div class="form-text text-muted">
+                                <i class="bi bi-shield-lock"></i> Senha configurada pelos administradores do sistema
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-send"></i> Enviar Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes da Reserva -->
+    <div class="modal fade" id="modalDetalhesReserva" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-info-circle"></i> Detalhes da Reserva
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detalhesReservaContent">
+                    <!-- Conteúdo será preenchido dinamicamente -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-warning" onclick="mostrarModalReport()">
+                        <i class="bi bi-exclamation-triangle"></i> Reportar Eventualidade
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light text-center py-3 mt-5">
+        <div class="container">
+            <p class="text-muted mb-0">
+                Desenvolvido por Carlos Henrique C. de Oliveira - Laboratórios de Informática - FAEN/UFGD 2025
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales/pt-br.global.min.js"></script>
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/icalendar.js"></script>
+    <script src="assets/js/patrimonial.js"></script>
+</body>
+</html>
+

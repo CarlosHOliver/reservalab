@@ -1,0 +1,442 @@
+/**
+ * ReservaLAB - Sistema de Reservas de Laboratórios e Equipamentos
+ * Estilos CSS seguindo Manual de Identidade Visual UFGD
+ * 
+ * Idealizado e Desenvolvido por Carlos Henrique C. de Oliveira - Tec. Laboratório de Informática FAEN/UFGD - Engenheiro da Computação
+ */
+
+/* Cores da Identidade Visual UFGD */
+:root {
+    --ufgd-azul-principal: #003366;
+    --ufgd-azul-secundario: #0066CC;
+    --ufgd-verde: #009933;
+    --ufgd-laranja: #FF6600;
+    --ufgd-cinza-claro: #F5F5F5;
+    --ufgd-cinza-medio: #CCCCCC;
+    --ufgd-cinza-escuro: #666666;
+    --ufgd-branco: #FFFFFF;
+}
+
+/* Reset e configurações gerais */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--ufgd-cinza-escuro);
+    background-color: var(--ufgd-cinza-claro);
+}
+
+/* Customização do Bootstrap com cores UFGD */
+.bg-primary {
+    background-color: var(--ufgd-azul-principal) !important;
+}
+
+.text-primary {
+    color: var(--ufgd-azul-principal) !important;
+}
+
+.btn-primary {
+    background-color: var(--ufgd-azul-principal);
+    border-color: var(--ufgd-azul-principal);
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--ufgd-azul-secundario);
+    border-color: var(--ufgd-azul-secundario);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 51, 102, 0.3);
+}
+
+.btn-outline-primary {
+    color: var(--ufgd-azul-principal);
+    border-color: var(--ufgd-azul-principal);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--ufgd-azul-principal);
+    border-color: var(--ufgd-azul-principal);
+}
+
+.btn-success {
+    background-color: var(--ufgd-verde);
+    border-color: var(--ufgd-verde);
+}
+
+.btn-success:hover {
+    background-color: #007a29;
+    border-color: #007a29;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: var(--ufgd-laranja);
+    color: #856404;
+}
+
+/* Header customizado */
+header {
+    background: linear-gradient(135deg, var(--ufgd-azul-principal) 0%, var(--ufgd-azul-secundario) 100%);
+    box-shadow: 0 2px 10px rgba(0, 51, 102, 0.2);
+}
+
+header h1 {
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* Cards e formulários */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--ufgd-azul-principal) 0%, var(--ufgd-azul-secundario) 100%);
+    color: white;
+    border-radius: 12px 12px 0 0 !important;
+    border: none;
+}
+
+/* Formulários */
+.form-control {
+    border-radius: 8px;
+    border: 2px solid var(--ufgd-cinza-medio);
+    transition: all 0.3s ease;
+    padding: 12px 16px;
+}
+
+.form-control:focus {
+    border-color: var(--ufgd-azul-secundario);
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+}
+
+.form-select {
+    border-radius: 8px;
+    border: 2px solid var(--ufgd-cinza-medio);
+    transition: all 0.3s ease;
+    padding: 12px 16px;
+}
+
+.form-select:focus {
+    border-color: var(--ufgd-azul-secundario);
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--ufgd-azul-principal);
+    margin-bottom: 8px;
+}
+
+/* Seções do formulário */
+.border-bottom {
+    border-bottom: 2px solid var(--ufgd-azul-secundario) !important;
+}
+
+/* Botões customizados */
+.btn {
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 12px 24px;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-outline-light:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: white;
+}
+
+/* Alertas */
+.alert {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.alert-success {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #055160;
+}
+
+/* Modais */
+.modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    border-radius: 12px 12px 0 0;
+    border-bottom: 2px solid var(--ufgd-cinza-medio);
+}
+
+.modal-footer {
+    border-top: 2px solid var(--ufgd-cinza-medio);
+}
+
+/* Equipamentos container */
+#equipamentosContainer {
+    background-color: var(--ufgd-branco);
+    border: 2px solid var(--ufgd-cinza-medio) !important;
+    border-radius: 8px;
+}
+
+.form-check {
+    margin-bottom: 8px;
+}
+
+.form-check-input:checked {
+    background-color: var(--ufgd-azul-principal);
+    border-color: var(--ufgd-azul-principal);
+}
+
+.form-check-label {
+    font-weight: 500;
+    color: var(--ufgd-cinza-escuro);
+}
+
+/* Status badges */
+.badge {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+.badge-pendente {
+    background-color: var(--ufgd-laranja);
+    color: white;
+}
+
+.badge-aprovada {
+    background-color: var(--ufgd-verde);
+    color: white;
+}
+
+.badge-rejeitada {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Calendário */
+.calendar-container {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.calendar-header {
+    background: linear-gradient(135deg, var(--ufgd-azul-principal) 0%, var(--ufgd-azul-secundario) 100%);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.calendar-day {
+    border: 1px solid var(--ufgd-cinza-medio);
+    min-height: 100px;
+    padding: 8px;
+    transition: all 0.3s ease;
+}
+
+.calendar-day:hover {
+    background-color: var(--ufgd-cinza-claro);
+}
+
+.calendar-event {
+    background-color: var(--ufgd-azul-secundario);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin-bottom: 2px;
+    cursor: pointer;
+}
+
+.calendar-event:hover {
+    background-color: var(--ufgd-azul-principal);
+}
+
+/* Dashboard Patrimonial */
+.patrimonial-header {
+    background: linear-gradient(135deg, var(--ufgd-verde) 0%, #007a29 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+.status-em-andamento {
+    animation: pulse 2s infinite;
+    background-color: var(--ufgd-laranja) !important;
+    color: white !important;
+    font-weight: bold;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.clock-display {
+    font-family: 'Courier New', monospace;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--ufgd-azul-principal);
+    background-color: var(--ufgd-cinza-claro);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 2px solid var(--ufgd-cinza-medio);
+}
+
+/* Tabelas */
+.table {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.table thead th {
+    background-color: var(--ufgd-azul-principal);
+    color: white;
+    border: none;
+    font-weight: 600;
+}
+
+.table tbody tr:hover {
+    background-color: var(--ufgd-cinza-claro);
+}
+
+/* Footer */
+footer {
+    background-color: var(--ufgd-cinza-medio);
+    color: var(--ufgd-cinza-escuro);
+    margin-top: auto;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    
+    header .d-flex {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn-group-mobile {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .card-body {
+        padding: 20px;
+    }
+    
+    .modal-dialog {
+        margin: 10px;
+    }
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Loading spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Validação de formulários */
+.was-validated .form-control:valid {
+    border-color: var(--ufgd-verde);
+}
+
+.was-validated .form-control:invalid {
+    border-color: #dc3545;
+}
+
+.valid-feedback {
+    color: var(--ufgd-verde);
+}
+
+/* Utilitários */
+.text-ufgd-azul {
+    color: var(--ufgd-azul-principal) !important;
+}
+
+.text-ufgd-verde {
+    color: var(--ufgd-verde) !important;
+}
+
+.bg-ufgd-azul {
+    background-color: var(--ufgd-azul-principal) !important;
+}
+
+.bg-ufgd-verde {
+    background-color: var(--ufgd-verde) !important;
+}
+
+.border-ufgd-azul {
+    border-color: var(--ufgd-azul-principal) !important;
+}
+
+/* Scrollbar customizada */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--ufgd-cinza-claro);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--ufgd-cinza-medio);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--ufgd-cinza-escuro);
+}
+

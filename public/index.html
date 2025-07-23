@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReservaLAB - Sistema de Reservas FAEN/UFGD</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="assets/css/style.css" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-primary text-white py-3 shadow-sm">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <img src="assets/images/logo-ufgd.png" alt="UFGD" class="me-3" style="height: 50px;">
+                        <div>
+                            <h1 class="h4 mb-0">ReservaLAB</h1>
+                            <small class="opacity-75">Sistema de Reservas de Laboratórios e Equipamentos</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button class="btn btn-outline-light btn-sm" onclick="abrirBuscaReserva()">
+                            <i class="bi bi-search"></i> Buscar Reserva
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="window.location.href='calendario.html'">
+                            <i class="bi bi-calendar3"></i> Calendário
+                        </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="window.location.href='equipamentos.html'">
+                            <i class="bi bi-tools"></i> Equipamentos
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container my-5">
+        <!-- Título Principal -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h2 class="text-primary mb-3">Solicitação de Reserva</h2>
+                <p class="text-muted">Preencha o formulário abaixo para solicitar a reserva de laboratórios e/ou equipamentos</p>
+            </div>
+        </div>
+
+        <!-- Formulário de Reserva -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow">
+                    <div class="card-body p-4">
+                        <form id="formReserva" novalidate>
+                            <!-- Dados do Solicitante -->
+                            <div class="mb-4">
+                                <h5 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="bi bi-person-fill"></i> Dados do Solicitante
+                                </h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="nomeCompleto" class="form-label">Nome Completo *</label>
+                                        <input type="text" class="form-control" id="nomeCompleto" required>
+                                        <div class="invalid-feedback">Por favor, informe seu nome completo.</div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="siapeRga" class="form-label">SIAPE/RGA *</label>
+                                        <input type="text" class="form-control" id="siapeRga" required>
+                                        <div class="invalid-feedback">Por favor, informe seu SIAPE ou RGA.</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="email" class="form-label">E-mail Institucional *</label>
+                                        <input type="email" class="form-control" id="email" required>
+                                        <div class="invalid-feedback">Por favor, informe um e-mail institucional válido (@ufgd.edu.br ou @academico.ufgd.edu.br).</div>
+                                        <small class="text-muted">Apenas e-mails @ufgd.edu.br ou @academico.ufgd.edu.br</small>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="telefone" class="form-label">Telefone</label>
+                                        <input type="tel" class="form-control" id="telefone">
+                                        <small class="text-muted">Opcional</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dados da Reserva -->
+                            <div class="mb-4">
+                                <h5 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="bi bi-calendar-event"></i> Dados da Reserva
+                                </h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="dataReserva" class="form-label">Data da Reserva *</label>
+                                        <input type="date" class="form-control" id="dataReserva" required>
+                                        <div class="invalid-feedback">Por favor, selecione uma data.</div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="horaInicio" class="form-label">Hora de Início *</label>
+                                        <input type="time" class="form-control" id="horaInicio" required>
+                                        <div class="invalid-feedback">Por favor, informe a hora de início.</div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="horaFim" class="form-label">Hora de Fim *</label>
+                                        <input type="time" class="form-control" id="horaFim" required>
+                                        <div class="invalid-feedback">Por favor, informe a hora de fim.</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="finalidade" class="form-label">Finalidade da Reserva *</label>
+                                    <textarea class="form-control" id="finalidade" rows="3" required placeholder="Descreva a finalidade da reserva..."></textarea>
+                                    <div class="invalid-feedback">Por favor, descreva a finalidade da reserva.</div>
+                                </div>
+
+                                <!-- Recorrência -->
+                                <div class="mb-3">
+                                    <label class="form-label">Recorrência</label>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <select class="form-select" id="recorrenciaTipo">
+                                                <option value="nenhuma">Sem recorrência</option>
+                                                <option value="diaria">Diária</option>
+                                                <option value="semanal">Semanal</option>
+                                                <option value="mensal">Mensal</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="date" class="form-control" id="recorrenciaFim" placeholder="Data fim da recorrência" disabled>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Selecione se deseja repetir esta reserva em outros dias</small>
+                                </div>
+                            </div>
+
+                            <!-- Seleção de Recursos -->
+                            <div class="mb-4">
+                                <h5 class="text-primary border-bottom pb-2 mb-3">
+                                    <i class="bi bi-building"></i> Seleção de Recursos
+                                </h5>
+                                
+                                <!-- Laboratório -->
+                                <div class="mb-3">
+                                    <label class="form-label">Laboratório</label>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <select class="form-select" id="blocoLaboratorio">
+                                                <option value="">Selecione o bloco</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <select class="form-select" id="laboratorio" disabled>
+                                                <option value="">Primeiro selecione o bloco</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Equipamentos -->
+                                <div class="mb-3">
+                                    <label class="form-label">Equipamentos</label>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <select class="form-select" id="blocoEquipamento">
+                                                <option value="">Selecione o bloco</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div id="equipamentosContainer" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                                <p class="text-muted mb-0">Primeiro selecione o bloco</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Professor Acompanhante (aparece dinamicamente) -->
+                            <div class="mb-4" id="professorContainer" style="display: none;">
+                                <h5 class="text-warning border-bottom pb-2 mb-3">
+                                    <i class="bi bi-person-badge"></i> Acompanhamento Necessário
+                                </h5>
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    Os recursos selecionados necessitam de acompanhamento de professor ou técnico.
+                                </div>
+                                <div class="mb-3">
+                                    <label for="professorAcompanhante" class="form-label">Nome do Professor/Técnico Responsável *</label>
+                                    <input type="text" class="form-control" id="professorAcompanhante">
+                                    <div class="invalid-feedback">Por favor, informe o nome do responsável.</div>
+                                </div>
+                            </div>
+
+                            <!-- Verificação de Conflitos -->
+                            <div id="conflitosContainer" class="mb-4" style="display: none;">
+                                <div class="alert alert-danger">
+                                    <h6><i class="bi bi-exclamation-triangle"></i> Conflito de Horário Detectado</h6>
+                                    <div id="conflitosLista"></div>
+                                    <p class="mb-0">Por favor, selecione outro horário ou recurso.</p>
+                                </div>
+                            </div>
+
+                            <!-- Botões -->
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-outline-secondary" onclick="limparFormulario()">
+                                    <i class="bi bi-arrow-clockwise"></i> Limpar
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="btnSubmit">
+                                    <i class="bi bi-send"></i> Enviar Solicitação
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Busca de Reserva -->
+    <div class="modal fade" id="modalBuscaReserva" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-search"></i> Buscar Reserva
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="protocoloBusca" class="form-label">Protocolo da Reserva</label>
+                        <input type="text" class="form-control" id="protocoloBusca" placeholder="Ex: 202510000001">
+                        <small class="text-muted">Informe o protocolo recebido após a solicitação</small>
+                    </div>
+                    <div id="resultadoBusca"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary" onclick="buscarReserva()">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Sucesso -->
+    <div class="modal fade" id="modalSucesso" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-check-circle"></i> Solicitação Enviada
+                    </h5>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    <h6>Sua solicitação foi enviada com sucesso!</h6>
+                    <p class="mb-3">Protocolo da reserva:</p>
+                    <div class="alert alert-info">
+                        <strong id="protocoloGerado"></strong>
+                    </div>
+                    <p class="text-muted">
+                        Guarde este protocolo para acompanhar o status da sua reserva.
+                        Você pode usar a função "Buscar Reserva" ou acompanhar pelo calendário.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" onclick="novaReserva()">
+                        <i class="bi bi-plus"></i> Nova Reserva
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='calendario.html'">
+                        <i class="bi bi-calendar3"></i> Ver Calendário
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light text-center py-3 mt-5">
+        <div class="container">
+            <p class="text-muted mb-0">
+                Desenvolvido por Carlos Henrique C. de Oliveira - Laboratórios de Informática - FAEN/UFGD 2025
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/icalendar.js"></script>
+    <script src="assets/js/formulario.js"></script>
+</body>
+</html>
+
