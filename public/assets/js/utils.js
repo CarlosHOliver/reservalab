@@ -10,15 +10,15 @@ const Utils = {
      * Exibe um toast de notificação.
      */
     showToast(message, type = 'info', duration = 3000) {
-        const toastContainer = document.getElementById('toastContainer');
+        let toastContainer = document.getElementById('toastContainer');
         if (!toastContainer) {
-            const div = document.createElement('div');
-            div.id = 'toastContainer';
-            div.style.position = 'fixed';
-            div.style.top = '20px';
-            div.style.right = '20px';
-            div.style.zIndex = '1050';
-            document.body.appendChild(div);
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.style.position = 'fixed';
+            toastContainer.style.top = '20px';
+            toastContainer.style.right = '20px';
+            toastContainer.style.zIndex = '1050';
+            document.body.appendChild(toastContainer);
         }
 
         const toastId = `toast-${Date.now()}`;
@@ -44,6 +44,24 @@ const Utils = {
     },
 
     /**
+     * Formata telefone para padrão (99) 99999-9999 ou (99) 9999-9999
+     */
+    formatarTelefone(valor) {
+        if (!valor) return '';
+        valor = valor.replace(/\D/g, '');
+        if (valor.length > 11) valor = valor.slice(0, 11);
+        if (valor.length > 10) {
+            return valor.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        } else if (valor.length > 6) {
+            return valor.replace(/(\d{2})(\d{4,5})(\d{0,4})/, '($1) $2-$3');
+        } else if (valor.length > 2) {
+            return valor.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+        } else {
+            return valor;
+        }
+    },
+
+    /**
      * Capitaliza a primeira letra de uma string.
      */
     capitalize(s) {
@@ -61,91 +79,65 @@ const Utils = {
             clearTimeout(timeout);
             timeout = setTimeout(() => func.apply(context, args), delay);
         };
-    }
-};
-
-const DateUtils = {
-    // Fuso horário de Cuiabá (UTC-4)
-    TIMEZONE_OFFSET_CUIABA: -4 * 60, // em minutos
-
-    /**
-     * Converte uma data/hora UTC para o fuso horário de Cuiabá.
-     * @param {Date} date Objeto Date em UTC.
-     * @returns {Date} Objeto Date no fuso horário de Cuiabá.
-     */
-    convertToCuiabaTime(date) {
-        const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
-        return new Date(utc + (this.TIMEZONE_OFFSET_CUIABA * 60000));
     },
 
     /**
-     * Converte uma data/hora no fuso horário de Cuiabá para UTC.
-     * @param {Date} date Objeto Date no fuso horário de Cuiabá.
-     * @returns {Date} Objeto Date em UTC.
+     * Exibe um loading simples em um container.
      */
-    convertFromCuiabaToUTC(date) {
-        const cuiabaTime = date.getTime() - (this.TIMEZONE_OFFSET_CUIABA * 60000);
-        return new Date(cuiabaTime - (date.getTimezoneOffset() * 60000));
+    showLoading(container, message = 'Carregando...') {
+        if (container) {
+            container.innerHTML = `<div class="d-flex align-items-center gap-2"><span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span> <span>${message}</span></div>`;
+        }
     },
 
     /**
-     * Formata uma data para exibição (DD/MM/AAAA).
-     * @param {string | Date} dateString Data em formato string ou objeto Date.
-     * @returns {string} Data formatada.
+     * Adiciona mensagem de erro a um campo do formulário.
      */
-    formatarData(dateString) {
-        const date = new Date(dateString);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = date.getFullYear();
-        return `${day}/${month}/${year}`;
+    adicionarErro(campoId, mensagem) {
+        const campo = document.getElementById(campoId);
+        if (!campo) return;
+        campo.classList.add('is-invalid');
+        let feedback = campo.parentElement.querySelector('.invalid-feedback');
+        if (!feedback) {
+            feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            campo.parentElement.appendChild(feedback);
+        }
+        feedback.textContent = mensagem;
     },
 
     /**
-     * Formata uma hora para exibição (HH:MM).
-     * @param {string} timeString Hora em formato string (HH:MM:SS ou HH:MM).
-     * @returns {string} Hora formatada.
+     * Remove mensagem de erro de um campo do formulário.
      */
-    formatarHora(timeString) {
-        if (!timeString) return '';
-        const parts = timeString.split(':');
-        return `${parts[0]}:${parts[1]}`;
+    removerErro(campoId) {
+        const campo = document.getElementById(campoId);
+        if (!campo) return;
+        campo.classList.remove('is-invalid');
+        let feedback = campo.parentElement.querySelector('.invalid-feedback');
+        if (feedback) feedback.textContent = '';
     },
 
     /**
-     * Formata uma data e hora para exibição (DD/MM/AAAA HH:MM).
-     * @param {string | Date} dateTimeString Data e hora em formato string ou objeto Date.
-     * @returns {string} Data e hora formatada.
+     * Valida todos os campos obrigatórios do formulário.
+     * Retorna true se válido, false se houver campos inválidos.
      */
-    formatarDataHora(dateTimeString) {
-        const date = new Date(dateTimeString);
-        const formattedDate = this.formatarData(date);
-        const formattedTime = this.formatarHora(date.toTimeString());
-        return `${formattedDate} ${formattedTime}`;
-    },
-
-    /**
-     * Obtém a data atual no fuso horário de Cuiabá.
-     * @returns {Date} Objeto Date representando a data e hora atual em Cuiabá.
-     */
-    getCurrentCuiabaDate() {
-        const now = new Date();
-        return this.convertToCuiabaTime(now);
-    },
-
-    /**
-     * Obtém a data de amanhã no fuso horário de Cuiabá.
-     * @returns {Date} Objeto Date representando a data de amanhã em Cuiabá.
-     */
-    getTomorrowCuiabaDate() {
-        const today = this.getCurrentCuiabaDate();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-        return tomorrow;
+    validarFormulario(form) {
+        let valido = true;
+        // Seleciona todos os campos obrigatórios visíveis
+        const campos = form.querySelectorAll('[required]:not([type=hidden]):not([disabled])');
+        campos.forEach(campo => {
+            if (!campo.value || campo.classList.contains('is-invalid')) {
+                campo.classList.add('is-invalid');
+                valido = false;
+            } else {
+                campo.classList.remove('is-invalid');
+            }
+        });
+        return valido;
     }
 };
 
 // Exportar para uso global
 window.Utils = Utils;
-window.DateUtils = DateUtils;
+if (window.DateUtils) window.DateUtils = window.DateUtils;
 

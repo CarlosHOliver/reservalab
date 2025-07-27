@@ -339,7 +339,8 @@ async function verificarAcompanhamento() {
 /**
  * Validar conflitos de horário
  */
-async function validarConflitos()        const dataReservaInput        const dataReservaInput = document.getElementById("dataReserva").value;
+async function validarConflitos() {
+    const dataReservaInput = document.getElementById("dataReserva").value;
         const horaInicioInput = document.getElementById("horaInicio").value;
         const horaFimInput = document.getElementById("horaFim").value;
 
@@ -427,39 +428,51 @@ function mostrarConflitos(conflitos) {
  */
 async function submeterFormulario(event) {
     event.preventDefault();
-    
+
     const form = event.target;
     const btnSubmit = document.getElementById('btnSubmit');
-    
+
     // Validar formulário
     if (!Utils.validarFormulario(form)) {
         Utils.showToast(SISTEMA_CONFIG.mensagens.erro.camposObrigatorios, 'warning');
         return;
     }
-    
+
     // Verificar se há conflitos
     if (estadoFormulario.conflitosDetectados.length > 0) {
         Utils.showToast(SISTEMA_CONFIG.mensagens.erro.conflitosDetectados, 'danger');
         return;
     }
-    
+
     // Verificar se pelo menos um recurso foi selecionado
     const laboratorioId = document.getElementById('laboratorio').value;
     const equipamentosSelecionados = Array.from(document.querySelectorAll('#equipamentosContainer input:checked'));
-    
+
     if (!laboratorioId && equipamentosSelecionados.length === 0) {
         Utils.showToast(SISTEMA_CONFIG.mensagens.erro.semRecursosSelecionados, 'warning');
         return;
     }
-    
+
     // Validações específicas
     if (!validarEmail()) return;
     if (!validarHorarios()) return;
-    
+
+    // Definir datas formatadas para envio
+    const dataReservaInput = document.getElementById("dataReserva").value;
+    const horaInicioInput = document.getElementById("horaInicio").value;
+    const horaFimInput = document.getElementById("horaFim").value;
+    const dataInicioCuiaba = new Date(`${dataReservaInput}T${horaInicioInput}:00`);
+    const dataFimCuiaba = new Date(`${dataReservaInput}T${horaFimInput}:00`);
+    const dataInicioUTC = DateUtils.convertFromCuiabaToUTC(dataInicioCuiaba);
+    const dataFimUTC = DateUtils.convertFromCuiabaToUTC(dataFimCuiaba);
+    const dataReservaFormatada = dataInicioUTC.toISOString().split("T")[0];
+    const horaInicioFormatada = dataInicioUTC.toISOString().split("T")[1].substring(0, 5);
+    const horaFimFormatada = dataFimUTC.toISOString().split("T")[1].substring(0, 5);
+
     // Mostrar loading
     btnSubmit.disabled = true;
     btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...';
-    
+
     try {
         // Coletar dados do formulário
         const dadosReserva = {
@@ -477,21 +490,21 @@ async function submeterFormulario(event) {
             recorrenciaTipo: document.getElementById('recorrenciaTipo').value,
             recorrenciaFim: document.getElementById('recorrenciaFim').value
         };
-        
+
         // Enviar reserva
         const resultado = await API.criarReserva(dadosReserva);
-        
+
         if (!resultado.sucesso) {
             throw new Error(resultado.erro);
         }
-        
+
         // Mostrar sucesso
         mostrarSucesso(resultado.dados.protocolo);
-        
+
     } catch (error) {
         console.error('Erro ao criar reserva:', error);
         Utils.showToast('Erro ao enviar solicitação: ' + error.message, 'danger');
-        
+
         // Restaurar botão
         btnSubmit.disabled = false;
         btnSubmit.innerHTML = '<i class="bi bi-send"></i> Enviar Solicitação';
