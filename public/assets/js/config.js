@@ -107,75 +107,7 @@ const SISTEMA_CONFIG = {
 };
 
 // Utilitários de data/hora para fuso horário de Cuiabá
-const DateUtils = {
-    /**
-     * Obter data/hora atual no fuso horário de Cuiabá
-     */
-    agora() {
-        return new Date().toLocaleString('pt-BR', {
-            timeZone: SISTEMA_CONFIG.fusoHorario
-        });
-    },
-    
-    /**
-     * Formatar data para exibição
-     */
-    formatarData(data) {
-        return new Date(data).toLocaleDateString('pt-BR');
-    },
-    
-    /**
-     * Formatar hora para exibição
-     */
-    formatarHora(hora) {
-        return hora.substring(0, 5); // HH:MM
-    },
-    
-    /**
-     * Formatar data e hora para exibição
-     */
-    formatarDataHora(dataHora) {
-        return new Date(dataHora).toLocaleString('pt-BR', {
-            timeZone: SISTEMA_CONFIG.fusoHorario
-        });
-    },
-    
-    /**
-     * Verificar se está no horário de expediente
-     */
-    isHorarioExpediente(data, hora) {
-        const dataObj = new Date(data);
-        const diaSemana = dataObj.getDay();
-        
-        // Verificar se é dia útil
-        if (!SISTEMA_CONFIG.expediente.diasSemana.includes(diaSemana)) {
-            return false;
-        }
-        
-        // Verificar horário
-        const horaNum = parseInt(hora.replace(':', ''));
-        const inicioNum = parseInt(SISTEMA_CONFIG.expediente.inicio.replace(':', ''));
-        const fimNum = parseInt(SISTEMA_CONFIG.expediente.fim.replace(':', ''));
-        
-        return horaNum >= inicioNum && horaNum <= fimNum;
-    },
-    
-    /**
-     * Obter data mínima para reservas (hoje)
-     */
-    getDataMinima() {
-        return new Date().toISOString().split('T')[0];
-    },
-    
-    /**
-     * Obter data máxima para reservas (6 meses à frente)
-     */
-    getDataMaxima() {
-        const data = new Date();
-        data.setMonth(data.getMonth() + 6);
-        return data.toISOString().split('T')[0];
-    }
-};
+
 
 // Validadores
 const Validadores = {
@@ -216,7 +148,7 @@ const Validadores = {
 
 // Exportar para uso global
 window.SISTEMA_CONFIG = SISTEMA_CONFIG;
-window.DateUtils = DateUtils;
+// window.DateUtils = DateUtils; // Removido: agora definido apenas em utils.js
 window.Validadores = Validadores;
 window.supabase = supabase;
 

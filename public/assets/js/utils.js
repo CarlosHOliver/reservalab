@@ -137,7 +137,82 @@ const Utils = {
     }
 };
 
+// Utilitários de data/hora para fuso horário de Cuiabá usando Luxon
+const DateUtils = {
+    ZONA: 'America/Cuiaba',
+
+    /**
+     * Retorna um DateTime Luxon na zona de Cuiabá a partir de uma string ou Date.
+     */
+    toCuiaba(dt) {
+        if (typeof dt === 'string') {
+            return luxon.DateTime.fromISO(dt, { zone: this.ZONA });
+        } else if (dt instanceof Date) {
+            return luxon.DateTime.fromJSDate(dt, { zone: this.ZONA });
+        } else if (luxon.DateTime.isDateTime(dt)) {
+            return dt.setZone(this.ZONA);
+        }
+        return luxon.DateTime.now().setZone(this.ZONA);
+    },
+
+    /**
+     * Converte uma data/hora UTC para Cuiabá (DateTime Luxon)
+     */
+    convertToCuiabaTime(date) {
+        return this.toCuiaba(date);
+    },
+
+    /**
+     * Converte uma data/hora de Cuiabá para UTC (DateTime Luxon)
+     */
+    convertFromCuiabaToUTC(date) {
+        return this.toCuiaba(date).toUTC();
+    },
+
+    /**
+     * Formata uma data para exibição (DD/MM/AAAA)
+     */
+    formatarData(dt) {
+        return this.toCuiaba(dt).toFormat('dd/MM/yyyy');
+    },
+
+    /**
+     * Formata uma hora para exibição (HH:mm)
+     */
+    formatarHora(dt) {
+        return this.toCuiaba(dt).toFormat('HH:mm');
+    },
+
+    /**
+     * Formata uma data e hora para exibição (DD/MM/AAAA HH:mm)
+     */
+    formatarDataHora(dt) {
+        return this.toCuiaba(dt).toFormat('dd/MM/yyyy HH:mm');
+    },
+
+    /**
+     * Obtém a data atual em Cuiabá (DateTime Luxon)
+     */
+    getCurrentCuiabaDate() {
+        return luxon.DateTime.now().setZone(this.ZONA);
+    },
+
+    /**
+     * Obtém a data mínima para reservas (hoje, formato ISO)
+     */
+    getDataMinima() {
+        return this.getCurrentCuiabaDate().toISODate();
+    },
+
+    /**
+     * Obtém a data máxima para reservas (6 meses à frente, formato ISO)
+     */
+    getDataMaxima() {
+        return this.getCurrentCuiabaDate().plus({ months: 6 }).toISODate();
+    }
+};
+
 // Exportar para uso global
 window.Utils = Utils;
-if (window.DateUtils) window.DateUtils = window.DateUtils;
+window.DateUtils = DateUtils;
 

@@ -95,7 +95,7 @@ const API = {
         try {
             // Primeiro, criar a reserva principal
             // Converte a data de reserva para UTC antes de enviar para o Supabase
-            const dataReservaUTC = DateUtils.convertFromCuiabaToUTC(new Date(`${dadosReserva.dataReserva}T${dadosReserva.horaInicio}:00`)).toISOString().split("T")[0];
+            const dataReservaUTC = DateUtils.convertFromCuiabaToUTC(new Date(`${dadosReserva.dataReserva}T${dadosReserva.horaInicio}:00`)).toISO().split("T")[0];
 
             const { data: reserva, error: errorReserva } = await supabase
                 .from("reservas")
@@ -113,7 +113,7 @@ const API = {
                     recorrencia_tipo: dadosReserva.recorrenciaTipo || "nenhuma",
                     recorrencia_fim: dadosReserva.recorrenciaFim || null
                 }])
-                .select()
+                .select("id, protocolo")
                 .single();
 
             if (errorReserva) throw errorReserva;
@@ -159,7 +159,7 @@ const API = {
             datas.shift();
 
             for (const data of datas) {
-                const dataFormatada = DateUtils.convertFromCuiabaToUTC(new Date(`${data.toISOString().split("T")[0]}T${dadosReserva.horaInicio}:00`)).toISOString().split("T")[0];
+                const dataFormatada = DateUtils.convertFromCuiabaToUTC(new Date(`${data.toISOString().split("T")[0]}T${dadosReserva.horaInicio}:00`)).toISO().split("T")[0];
                 
                 // Criar reserva filha
                 const { data: reservaFilha, error } = await supabase
@@ -221,7 +221,7 @@ const API = {
                         equipamentos (nome)
                     )
                 `)
-                .eq('protocolo', protocolo)
+                .eq('reservas.protocolo', protocolo)
                 .single();
 
             if (error) throw error;

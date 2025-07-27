@@ -269,7 +269,7 @@ function validarHorarios() {
         return false;
     } else {
         Utils.removerErro('horaFim');
-        validarConflitos();
+        // REMOVIDO: validarConflitos(); <- Causava loop infinito
         return true;
     }
 }
@@ -341,20 +341,34 @@ async function verificarAcompanhamento() {
  */
 async function validarConflitos() {
     const dataReservaInput = document.getElementById("dataReserva").value;
-        const horaInicioInput = document.getElementById("horaInicio").value;
-        const horaFimInput = document.getElementById("horaFim").value;
+    const horaInicioInput = document.getElementById("horaInicio").value;
+    const horaFimInput = document.getElementById("horaFim").value;
+    const laboratorioSelect = document.getElementById('laboratorio');
+    
+    // Verificar se todos os campos necessários estão preenchidos
+    if (!dataReservaInput || !horaInicioInput || !horaFimInput) {
+        return;
+    }
+    
+    // Obter o laboratório selecionado (pode ser null se não houver seleção)
+    const laboratorioId = laboratorioSelect.value ? parseInt(laboratorioSelect.value) : null;
 
-        // Converter para UTC a partir do horário de Cuiabá
-        const dataReservaCuiaba = new Date(`${dataReservaInput}T00:00:00`);
-        const dataInicioCuiaba = new Date(`${dataReservaInput}T${horaInicioInput}:00`);
-        const dataFimCuiaba = new Date(`${dataReservaInput}T${horaFimInput}:00`);
+    // Converter para UTC a partir do horário de Cuiabá
+    const dataInicioCuiaba = new Date(`${dataReservaInput}T${horaInicioInput}:00`);
+    const dataFimCuiaba = new Date(`${dataReservaInput}T${horaFimInput}:00`);
 
-        const dataInicioUTC = DateUtils.convertFromCuiabaToUTC(dataInicioCuiaba);
-        const dataFimUTC = DateUtils.convertFromCuiabaToUTC(dataFimCuiaba);
+    const dataInicioUTC = DateUtils.convertFromCuiabaToUTC(dataInicioCuiaba);
+    const dataFimUTC = DateUtils.convertFromCuiabaToUTC(dataFimCuiaba);
+    
+    // Verificar se as conversões foram bem-sucedidas
+    if (!dataInicioUTC || !dataFimUTC || !dataInicioUTC.toISO || !dataFimUTC.toISO) {
+        console.error('Erro na conversão de datas para UTC');
+        return;
+    }
 
-        const dataReservaFormatada = dataInicioUTC.toISOString().split("T")[0];
-        const horaInicioFormatada = dataInicioUTC.toISOString().split("T")[1].substring(0, 5);
-        const horaFimFormatada = dataFimUTC.toISOString().split("T")[1].substring(0, 5);;
+    const dataReservaFormatada = dataInicioUTC.toISO().split("T")[0];
+    const horaInicioFormatada = dataInicioUTC.toISO().split("T")[1].substring(0, 5);
+    const horaFimFormatada = dataFimUTC.toISO().split("T")[1].substring(0, 5);
     const equipamentosSelecionados = Array.from(document.querySelectorAll('#equipamentosContainer input:checked'))
         .map(cb => parseInt(cb.value));
     
@@ -365,15 +379,13 @@ async function validarConflitos() {
     conflitosContainer.style.display = 'none';
     btnSubmit.disabled = false;
     
-    if (!dataReserva || !horaInicio || !horaFim) return;
-    
-    if (!validarHorarios()) return;
+    // REMOVIDO: if (!validarHorarios()) return; <- Causava loop infinito
     
     try {
         const resultado = await API.verificarConflitos(
-            dataReserva, 
-            horaInicio, 
-            horaFim, 
+            dataReservaFormatada, 
+            horaInicioFormatada, 
+            horaFimFormatada, 
             laboratorioId || null, 
             equipamentosSelecionados
         );
@@ -465,9 +477,9 @@ async function submeterFormulario(event) {
     const dataFimCuiaba = new Date(`${dataReservaInput}T${horaFimInput}:00`);
     const dataInicioUTC = DateUtils.convertFromCuiabaToUTC(dataInicioCuiaba);
     const dataFimUTC = DateUtils.convertFromCuiabaToUTC(dataFimCuiaba);
-    const dataReservaFormatada = dataInicioUTC.toISOString().split("T")[0];
-    const horaInicioFormatada = dataInicioUTC.toISOString().split("T")[1].substring(0, 5);
-    const horaFimFormatada = dataFimUTC.toISOString().split("T")[1].substring(0, 5);
+    const dataReservaFormatada = dataInicioUTC.toISO().split("T")[0];
+    const horaInicioFormatada = dataInicioUTC.toISO().split("T")[1].substring(0, 5);
+        const horaFimFormatada = dataFimUTC.toISO().split("T")[1].substring(0, 5);
 
     // Mostrar loading
     btnSubmit.disabled = true;
