@@ -19,15 +19,21 @@
   "author": "Carlos Henrique C. de Oliveira - Tec. Laboratório de Informática FAEN/UFGD",
   "license": "MIT",
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0"
+    "@supabase/supabase-js": "^2.39.0",
+    "bcryptjs": "^3.0.2"
   },
   "devDependencies": {
     "live-server": "^1.2.2"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/seu-usuario/reservalab-faen-ufgd.git"
+    "url": "git+https://github.com/seu-usuario/reservalab-faen-ufgd.git"
   },
-  "homepage": "https://reservalab-faen-ufgd.vercel.app"
+  "homepage": "https://reservalab-faen-ufgd.vercel.app",
+  "bugs": {
+    "url": "https://github.com/seu-usuario/reservalab-faen-ufgd/issues"
+  },
+  "directories": {
+    "doc": "docs"
+  }
 }
-

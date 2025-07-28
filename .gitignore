@@ -1,0 +1,57 @@
+# Dependências
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Arquivos de ambiente e configuração
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs
+*.log
+
+# Cache
+.cache/
+*.tmp
+
+# Arquivos do sistema operacional
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Arquivos de backup
+*.bak
+*.backup
+
+# Credenciais e chaves
+config.local.js
+credentials.json
+private-key.json
+
+# Build e distribuição
+dist/
+build/
+out/
+
+# Documentação gerada
+docs/generated/
+
+# Arquivos temporários
+temp/
+tmp/

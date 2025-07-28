@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste BCrypt - Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 300px; }
+    </style>
+</head>
+<body>
+    <h1>Teste BCrypt - Debug do Login</h1>
+    
+    <div class="test-section">
+        <h2>1. Verificar Biblioteca BCrypt</h2>
+        <button onclick="testarBcrypt()">Testar BCrypt</button>
+        <div id="bcryptStatus"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Teste de Senhas Comuns</h2>
+        <p>Hash do banco: <code>$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi</code></p>
+        <button onclick="testarSenhasComuns()">Testar Senhas Comuns</button>
+        <div id="senhasResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Teste Manual</h2>
+        <input type="text" id="senhaManual" placeholder="Digite a senha para testar">
+        <button onclick="testarSenhaManual()">Testar</button>
+        <div id="manualResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Gerar Novo Hash</h2>
+        <input type="text" id="novaSenha" placeholder="Digite a nova senha">
+        <button onclick="gerarNovoHash()">Gerar Hash</button>
+        <div id="novoHashResult"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+    <script>
+        const hashDoBanco = '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
+        
+        function testarBcrypt() {
+            const statusDiv = document.getElementById('bcryptStatus');
+            
+            if (typeof bcrypt === 'undefined') {
+                statusDiv.innerHTML = '<div class="test-result error">❌ BCrypt não carregado</div>';
+                return;
+            }
+            
+            // Teste básico
+            const senhaTest = 'test123';
+            const hashTest = bcrypt.hashSync(senhaTest, 10);
+            const verificacao = bcrypt.compareSync(senhaTest, hashTest);
+            
+            if (verificacao) {
+                statusDiv.innerHTML = '<div class="test-result success">✅ BCrypt funcionando corretamente</div>';
+            } else {
+                statusDiv.innerHTML = '<div class="test-result error">❌ BCrypt com problema</div>';
+            }
+        }
+        
+        function testarSenhasComuns() {
+            const resultDiv = document.getElementById('senhasResult');
+            const senhasComuns = [
+                'password',
+                'secret', 
+                'admin',
+                '123456',
+                'admin123',
+                'password123',
+                'secret123',
+                'test',
+                'demo',
+                'laravel_session'  // Este hash específico é conhecido
+            ];
+            
+            let resultados = '<h4>Resultados dos testes:</h4>';
+            let senhaEncontrada = false;
+            
+            senhasComuns.forEach(senha => {
+                const valida = bcrypt.compareSync(senha, hashDoBanco);
+                resultados += `<div class="test-result ${valida ? 'success' : 'info'}">
+                    ${valida ? '✅' : '❌'} Senha: "${senha}" ${valida ? '(ENCONTRADA!)' : ''}
+                </div>`;
+                
+                if (valida) {
+                    senhaEncontrada = true;
+                    resultados += `<div class="test-result success">
+                        🎉 SENHA ENCONTRADA: "${senha}"
+                    </div>`;
+                }
+            });
+            
+            if (!senhaEncontrada) {
+                resultados += '<div class="test-result error">❌ Nenhuma senha comum funcionou</div>';
+            }
+            
+            resultDiv.innerHTML = resultados;
+        }
+        
+        function testarSenhaManual() {
+            const senha = document.getElementById('senhaManual').value;
+            const resultDiv = document.getElementById('manualResult');
+            
+            if (!senha) {
+                resultDiv.innerHTML = '<div class="test-result error">Digite uma senha</div>';
+                return;
+            }
+            
+            const valida = bcrypt.compareSync(senha, hashDoBanco);
+            
+            resultDiv.innerHTML = `<div class="test-result ${valida ? 'success' : 'error'}">
+                ${valida ? '✅' : '❌'} Senha "${senha}" ${valida ? 'VÁLIDA!' : 'inválida'}
+            </div>`;
+        }
+        
+        function gerarNovoHash() {
+            const senha = document.getElementById('novaSenha').value;
+            const resultDiv = document.getElementById('novoHashResult');
+            
+            if (!senha) {
+                resultDiv.innerHTML = '<div class="test-result error">Digite uma senha</div>';
+                return;
+            }
+            
+            const novoHash = bcrypt.hashSync(senha, 10);
+            const verificacao = bcrypt.compareSync(senha, novoHash);
+            
+            resultDiv.innerHTML = `
+                <div class="test-result ${verificacao ? 'success' : 'error'}">
+                    ${verificacao ? '✅' : '❌'} Hash gerado e testado
+                </div>
+                <div class="test-result info">
+                    <strong>Nova senha:</strong> ${senha}<br>
+                    <strong>Novo hash:</strong> <code>${novoHash}</code><br><br>
+                    <strong>SQL para atualizar:</strong><br>
+                    <code>UPDATE usuarios SET senha_hash = '${novoHash}' WHERE login = 'admin';</code>
+                </div>
+            `;
+        }
+        
+        // Executar teste automático ao carregar
+        setTimeout(() => {
+            testarBcrypt();
+            testarSenhasComuns();
+        }, 1000);
+    </script>
+</body>
+</html>

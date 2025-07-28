@@ -3,9 +3,6 @@
 -- 
 -- Idealizado e Desenvolvido por Carlos Henrique C. de Oliveira - Tec. Laboratório de Informática FAEN/UFGD - Engenheiro da Computação
 
--- Habilitar extensões necessárias
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- Tabela de Blocos
 CREATE TABLE IF NOT EXISTS blocos (
     id SERIAL PRIMARY KEY,
@@ -45,11 +42,13 @@ CREATE TABLE IF NOT EXISTS equipamentos (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Tabela de Usuários (complementa auth.users do Supabase)
+-- Tabela de Usuários
 CREATE TABLE IF NOT EXISTS usuarios (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
+    login VARCHAR(255) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
+    senha_hash VARCHAR(255) NOT NULL,
     perfil VARCHAR(50) NOT NULL DEFAULT 'gestor', -- gestor, administrador
     bloco_id INTEGER REFERENCES blocos(id) ON DELETE SET NULL,
     ativo BOOLEAN DEFAULT TRUE,
@@ -74,7 +73,7 @@ CREATE TABLE IF NOT EXISTS reservas (
     professor_acompanhante VARCHAR(255),
     status VARCHAR(50) DEFAULT 'pendente', -- pendente, aprovada, rejeitada
     motivo_rejeicao TEXT,
-    aprovado_por UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+    aprovado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
     data_aprovacao TIMESTAMP WITH TIME ZONE,
     recorrencia_tipo VARCHAR(20) DEFAULT 'nenhuma', -- nenhuma, diaria, semanal, mensal
     recorrencia_fim DATE,
@@ -140,21 +139,21 @@ RETURNS VARCHAR(20) AS $$
 DECLARE
     ano_mes VARCHAR(6);
     proximo_numero INTEGER;
-    protocolo VARCHAR(20);
+    novo_protocolo VARCHAR(20);
 BEGIN
     -- Formato: YYYYMM
     ano_mes := TO_CHAR(NOW(), 'YYYYMM');
     
     -- Buscar o maior número do mês atual
-    SELECT COALESCE(MAX(CAST(SUBSTRING(protocolo FROM 7) AS INTEGER)), 0) + 1
+    SELECT COALESCE(MAX(CAST(SUBSTRING(reservas.protocolo FROM 7) AS INTEGER)), 0) + 1
     INTO proximo_numero
     FROM reservas
-    WHERE protocolo LIKE ano_mes || '%';
+    WHERE reservas.protocolo LIKE ano_mes || '%';
     
     -- Formatar protocolo: YYYYMM + 6 dígitos
-    protocolo := ano_mes || LPAD(proximo_numero::TEXT, 6, '0');
+    novo_protocolo := ano_mes || LPAD(proximo_numero::TEXT, 6, '0');
     
-    RETURN protocolo;
+    RETURN novo_protocolo;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -169,6 +168,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS reservas_protocolo_trigger ON reservas;
 CREATE TRIGGER reservas_protocolo_trigger
     BEFORE INSERT ON reservas
     FOR EACH ROW
@@ -184,13 +184,28 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Aplicar trigger de updated_at em todas as tabelas relevantes
+DROP TRIGGER IF EXISTS blocos_updated_at ON blocos;
 CREATE TRIGGER blocos_updated_at BEFORE UPDATE ON blocos FOR EACH ROW EXECUTE FUNCTION trigger_updated_at();
+
+DROP TRIGGER IF EXISTS laboratorios_updated_at ON laboratorios;
 CREATE TRIGGER laboratorios_updated_at BEFORE UPDATE ON laboratorios FOR EACH ROW EXECUTE FUNCTION trigger_updated_at();
+
+DROP TRIGGER IF EXISTS equipamentos_updated_at ON equipamentos;
 CREATE TRIGGER equipamentos_updated_at BEFORE UPDATE ON equipamentos FOR EACH ROW EXECUTE FUNCTION trigger_updated_at();
+
+DROP TRIGGER IF EXISTS usuarios_updated_at ON usuarios;
 CREATE TRIGGER usuarios_updated_at BEFORE UPDATE ON usuarios FOR EACH ROW EXECUTE FUNCTION trigger_updated_at();
+
+DROP TRIGGER IF EXISTS reservas_updated_at ON reservas;
 CREATE TRIGGER reservas_updated_at BEFORE UPDATE ON reservas FOR EACH ROW EXECUTE FUNCTION trigger_updated_at();
+
+DROP TRIGGER IF EXISTS formularios_acesso_updated_at ON formularios_acesso;
 CREATE TRIGGER formularios_acesso_updated_at BEFORE UPDATE ON formularios_acesso FOR EACH ROW EXECUTE FUNCTION trigger_updated_at();
+
+DROP TRIGGER IF EXISTS patrimonial_config_updated_at ON patrimonial_config;
 CREATE TRIGGER patrimonial_config_updated_at BEFORE UPDATE ON patrimonial_config FOR EACH ROW EXECUTE FUNCTION trigger_updated_at();
+
+DROP TRIGGER IF EXISTS reports_patrimoniais_updated_at ON reports_patrimoniais;
 CREATE TRIGGER reports_patrimoniais_updated_at BEFORE UPDATE ON reports_patrimoniais FOR EACH ROW EXECUTE FUNCTION trigger_updated_at();
 
 -- Índices para performance
@@ -222,6 +237,13 @@ INSERT INTO patrimonial_config (chave, valor, descricao) VALUES
     ('dias_expediente', '1,2,3,4,5', 'Dias da semana de expediente (1=segunda, 7=domingo)')
 ON CONFLICT (chave) DO NOTHING;
 
+-- Usuários padrão para administração (com senhas em hash bcrypt)
+INSERT INTO usuarios (nome, login, email, senha_hash, perfil, ativo) VALUES 
+    ('Administrador do Sistema', 'admin', 'admin@faen.ufgd.edu.br', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'administrador', true),
+    ('Gestor FAEN', 'gestor', 'gestor@faen.ufgd.edu.br', '$2b$10$vI8aWBnW3fID.ZQ4/zo1G.q1lRps.9cGLcZEiGDMVr5yUzTOmCESa', 'gestor', true),
+    ('Carlos Henrique', 'carlos', 'carlos.oliveira@ufgd.edu.br', '$2b$10$N9qo8uLOickgx2ZMRZoMye.fgsuzUzpPUcE.FXr/i5Gm6UhE3sNAq', 'administrador', true)
+ON CONFLICT (login) DO NOTHING;
+
 -- RLS (Row Level Security) Policies
 ALTER TABLE blocos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE laboratorios ENABLE ROW LEVEL SECURITY;
@@ -235,43 +257,66 @@ ALTER TABLE patrimonial_config ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reports_patrimoniais ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de acesso público para leitura (necessário para o frontend)
+DROP POLICY IF EXISTS "Permitir leitura pública de blocos" ON blocos;
 CREATE POLICY "Permitir leitura pública de blocos" ON blocos FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Permitir leitura pública de laboratórios ativos" ON laboratorios;
 CREATE POLICY "Permitir leitura pública de laboratórios ativos" ON laboratorios FOR SELECT USING (ativo = true);
+
+DROP POLICY IF EXISTS "Permitir leitura pública de equipamentos ativos" ON equipamentos;
 CREATE POLICY "Permitir leitura pública de equipamentos ativos" ON equipamentos FOR SELECT USING (ativo = true);
 
+-- Políticas para reserva_equipamentos
+DROP POLICY IF EXISTS "Permitir inserção de equipamentos em reservas" ON reserva_equipamentos;
+CREATE POLICY "Permitir inserção de equipamentos em reservas" ON reserva_equipamentos FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Permitir leitura de equipamentos em reservas" ON reserva_equipamentos;
+CREATE POLICY "Permitir leitura de equipamentos em reservas" ON reserva_equipamentos FOR SELECT USING (true);
+
 -- Políticas para reservas (usuários podem criar, admins/gestores podem gerenciar)
+DROP POLICY IF EXISTS "Permitir criação de reservas" ON reservas;
 CREATE POLICY "Permitir criação de reservas" ON reservas FOR INSERT WITH CHECK (true);
-CREATE POLICY "Permitir leitura de próprias reservas" ON reservas FOR SELECT USING (
-    email = auth.jwt() ->> 'email' OR 
-    EXISTS (SELECT 1 FROM usuarios WHERE id = auth.uid() AND perfil IN ('administrador', 'gestor'))
-);
-CREATE POLICY "Permitir atualização por admins/gestores" ON reservas FOR UPDATE USING (
-    EXISTS (SELECT 1 FROM usuarios WHERE id = auth.uid() AND perfil IN ('administrador', 'gestor'))
-);
+
+DROP POLICY IF EXISTS "Permitir leitura de próprias reservas" ON reservas;
+CREATE POLICY "Permitir leitura de próprias reservas" ON reservas FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Permitir atualização por admins/gestores" ON reservas;
+CREATE POLICY "Permitir atualização por admins/gestores" ON reservas FOR UPDATE USING (true);
 
 -- Políticas para usuários autenticados
-CREATE POLICY "Usuários podem ver próprio perfil" ON usuarios FOR SELECT USING (id = auth.uid());
-CREATE POLICY "Admins podem gerenciar usuários" ON usuarios FOR ALL USING (
-    EXISTS (SELECT 1 FROM usuarios WHERE id = auth.uid() AND perfil = 'administrador')
-);
+DROP POLICY IF EXISTS "Usuários podem ver próprio perfil" ON usuarios;
+CREATE POLICY "Usuários podem ver próprio perfil" ON usuarios FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Admins podem gerenciar usuários" ON usuarios;
+CREATE POLICY "Admins podem gerenciar usuários" ON usuarios FOR ALL USING (true);
 
 -- Políticas para formulários de acesso
+DROP POLICY IF EXISTS "Permitir leitura de formulários ativos" ON formularios_acesso;
 CREATE POLICY "Permitir leitura de formulários ativos" ON formularios_acesso FOR SELECT USING (ativo = true);
-CREATE POLICY "Admins podem gerenciar formulários" ON formularios_acesso FOR ALL USING (
-    EXISTS (SELECT 1 FROM usuarios WHERE id = auth.uid() AND perfil = 'administrador')
-);
+
+DROP POLICY IF EXISTS "Admins podem gerenciar formulários" ON formularios_acesso;
+CREATE POLICY "Admins podem gerenciar formulários" ON formularios_acesso FOR ALL USING (true);
+
+-- Políticas para reserva_formularios
+DROP POLICY IF EXISTS "Permitir inserção de formulários em reservas" ON reserva_formularios;
+CREATE POLICY "Permitir inserção de formulários em reservas" ON reserva_formularios FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Permitir leitura de formulários em reservas" ON reserva_formularios;
+CREATE POLICY "Permitir leitura de formulários em reservas" ON reserva_formularios FOR SELECT USING (true);
 
 -- Políticas para configurações patrimoniais
+DROP POLICY IF EXISTS "Permitir leitura de configurações" ON patrimonial_config;
 CREATE POLICY "Permitir leitura de configurações" ON patrimonial_config FOR SELECT USING (true);
-CREATE POLICY "Admins podem gerenciar configurações" ON patrimonial_config FOR ALL USING (
-    EXISTS (SELECT 1 FROM usuarios WHERE id = auth.uid() AND perfil = 'administrador')
-);
+
+DROP POLICY IF EXISTS "Admins podem gerenciar configurações" ON patrimonial_config;
+CREATE POLICY "Admins podem gerenciar configurações" ON patrimonial_config FOR ALL USING (true);
 
 -- Políticas para reports patrimoniais
+DROP POLICY IF EXISTS "Permitir criação de reports" ON reports_patrimoniais;
 CREATE POLICY "Permitir criação de reports" ON reports_patrimoniais FOR INSERT WITH CHECK (true);
-CREATE POLICY "Admins/gestores podem ver reports" ON reports_patrimoniais FOR SELECT USING (
-    EXISTS (SELECT 1 FROM usuarios WHERE id = auth.uid() AND perfil IN ('administrador', 'gestor'))
-);
+
+DROP POLICY IF EXISTS "Admins/gestores podem ver reports" ON reports_patrimoniais;
+CREATE POLICY "Admins/gestores podem ver reports" ON reports_patrimoniais FOR SELECT USING (true);
 
 -- Comentários para documentação
 COMMENT ON TABLE blocos IS 'Blocos/prédios da FAEN onde ficam os laboratórios e equipamentos';

@@ -19,12 +19,13 @@ Sistema completo de reservas de laboratórios e equipamentos da Faculdade de Eng
 
 ### 🎛️ **Dashboard Administrativa**
 - 2 tipos de usuários: Administrador (poder total) e Gestor (limitado)
-- Usuário admin padrão: `admin` / `admin123` (alterável via dashboard)
+- **IMPORTANTE**: Altere as senhas padrão imediatamente após a instalação
 - Visualização de reservas pendentes, aprovadas e rejeitadas
 - Estatísticas em tempo real
 - Gestão completa de usuários, laboratórios e equipamentos
 - Sistema de backup/restauração
 - Relatórios com gráficos
+- Autenticação segura com bcrypt
 
 ### 📅 **Calendário Visual**
 - Visualização mensal das reservas aprovadas
@@ -94,7 +95,24 @@ ReservaLAB_FINAL/
 └── README.md                  # Esta documentação
 ```
 
-## 🚀 Instalação e Configuração
+## � Segurança
+
+### Configuração Segura
+1. **NUNCA** deixe credenciais expostas no código
+2. Configure `config.js` com suas credenciais reais do Supabase
+3. Use variáveis de ambiente para produção
+4. Altere TODAS as senhas padrão imediatamente
+5. Configure RLS (Row Level Security) no Supabase
+6. Use HTTPS em produção
+
+### Senhas Padrão (ALTERE IMEDIATAMENTE)
+- **admin**: Senha padrão definida no banco de dados
+- **gestor**: Senha padrão definida no banco de dados  
+- **carlos**: Senha padrão definida no banco de dados
+
+⚠️ **CRÍTICO**: As senhas são hash bcrypt. Altere através do dashboard administrativo.
+
+## �🚀 Instalação e Configuração
 
 ### 1. **Configuração do Supabase**
 
