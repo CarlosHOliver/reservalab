@@ -97,7 +97,10 @@ const API = {
             // Converte a data de reserva para UTC antes de enviar para o Supabase
             const dataReservaUTC = DateUtils.convertFromCuiabaToUTC(new Date(`${dadosReserva.dataReserva}T${dadosReserva.horaInicio}:00`)).toISO().split("T")[0];
 
-            const { data: reserva, error: errorReserva } = await supabase
+            // Marcar timestamp antes do insert para busca posterior
+            const timestampAntes = new Date().toISOString();
+
+            const { error: errorReserva } = await supabase
                 .from("reservas")
                 .insert([{
                     nome_completo: dadosReserva.nomeCompleto,
@@ -112,16 +115,32 @@ const API = {
                     professor_acompanhante: dadosReserva.professorAcompanhante,
                     recorrencia_tipo: dadosReserva.recorrenciaTipo || "nenhuma",
                     recorrencia_fim: dadosReserva.recorrenciaFim || null
-                }])
-                .select("id, protocolo")
-                .single();
+                }]);
 
             if (errorReserva) throw errorReserva;
+
+            // Aguardar um momento para garantir que o trigger foi executado
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Buscar a reserva recém-criada usando o timestamp
+            const { data: reservaCriada, error: errorBusca } = await supabase
+                .from("reservas")
+                .select("id, protocolo")
+                .eq("email", dadosReserva.email)
+                .gte("created_at", timestampAntes)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .single();
+
+            if (errorBusca) throw errorBusca;
+
+            // Usar a reserva encontrada
+            const reservaFinal = reservaCriada;
 
             // Se há equipamentos, associá-los à reserva
             if (dadosReserva.equipamentos && dadosReserva.equipamentos.length > 0) {
                 const equipamentosReserva = dadosReserva.equipamentos.map(equipamentoId => ({
-                    reserva_id: reserva.id,
+                    reserva_id: reservaFinal.id,
                     equipamento_id: equipamentoId
                 }));
 
@@ -134,10 +153,10 @@ const API = {
 
             // Se há recorrência, criar reservas filhas
             if (dadosReserva.recorrenciaTipo && dadosReserva.recorrenciaTipo !== 'nenhuma') {
-                await this.criarReservasRecorrentes(reserva, dadosReserva);
+                await this.criarReservasRecorrentes(reservaFinal, dadosReserva);
             }
 
-            return { sucesso: true, dados: reserva };
+            return { sucesso: true, dados: reservaFinal };
         } catch (error) {
             console.error('Erro ao criar reserva:', error);
             return { sucesso: false, erro: error.message };
