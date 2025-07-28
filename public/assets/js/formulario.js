@@ -2,8 +2,10 @@
  * ReservaLAB - Formulário de Reservas
  * Sistema de Reservas de Laboratórios e Equipamentos - FAEN/UFGD
  * Desenvolvido por Carlos Henrique C. de Oliveira
- * Versão: 1.0.1 - Corrigida definitivamente em 28/07/2025
+ * Versão: 1.0.2 - Versão limpa e otimizada - 28/07/2025
  */
+
+console.log('✅ ReservaLAB v1.0.2 - Sistema totalmente funcional');
 
 // Objeto com utilitários para formulário
 const FormularioUtils = {
@@ -51,19 +53,14 @@ const FormularioUtils = {
      * Formatação de hora completamente defensiva
      */
     formatarHoraSegura(hora) {
-        console.log('📝 formatarHoraSegura chamada com:', hora, typeof hora);
-        
         // Se já é string no formato correto, retornar
         if (typeof hora === 'string' && /^\d{2}:\d{2}$/.test(hora)) {
-            console.log('📝 Hora já no formato correto:', hora);
             return hora;
         }
         
         // Se é string no formato com segundos, remover segundos
         if (typeof hora === 'string' && /^\d{2}:\d{2}:\d{2}/.test(hora)) {
-            const horaSemSegundos = hora.substring(0, 5);
-            console.log('📝 Hora convertida de HH:MM:SS para HH:MM:', horaSemSegundos);
-            return horaSemSegundos;
+            return hora.substring(0, 5);
         }
         
         // Se é string de timestamp, converter
@@ -71,12 +68,10 @@ const FormularioUtils = {
             try {
                 const dt = DateTime.fromISO(hora, { zone: 'America/Cuiaba' });
                 if (dt.isValid) {
-                    const resultado = dt.toFormat('HH:mm');
-                    console.log('📝 Hora convertida de ISO para HH:MM:', resultado);
-                    return resultado;
+                    return dt.toFormat('HH:mm');
                 }
             } catch (error) {
-                console.error('📝 Erro ao converter ISO string:', error);
+                console.error('Erro ao converter ISO string:', error);
             }
         }
         
@@ -85,23 +80,19 @@ const FormularioUtils = {
             try {
                 const dt = DateTime.fromJSDate(hora, { zone: 'America/Cuiaba' });
                 if (dt.isValid) {
-                    const resultado = dt.toFormat('HH:mm');
-                    console.log('📝 Hora convertida de Date para HH:MM:', resultado);
-                    return resultado;
+                    return dt.toFormat('HH:mm');
                 }
             } catch (error) {
-                console.error('📝 Erro ao converter Date:', error);
+                console.error('Erro ao converter Date:', error);
             }
         }
         
         // Se é objeto DateTime do Luxon
         if (hora && typeof hora.toFormat === 'function') {
             try {
-                const resultado = hora.toFormat('HH:mm');
-                console.log('📝 Hora convertida de DateTime para HH:MM:', resultado);
-                return resultado;
+                return hora.toFormat('HH:mm');
             } catch (error) {
-                console.error('📝 Erro ao converter DateTime:', error);
+                console.error('Erro ao converter DateTime:', error);
             }
         }
         
@@ -109,13 +100,11 @@ const FormularioUtils = {
         const horaStr = String(hora);
         const match = horaStr.match(/(\d{1,2}):(\d{2})/);
         if (match) {
-            const horaFormatada = match[1].padStart(2, '0') + ':' + match[2];
-            console.log('📝 Hora extraída via regex:', horaFormatada);
-            return horaFormatada;
+            return match[1].padStart(2, '0') + ':' + match[2];
         }
         
         // Se nada funcionou, retornar fallback
-        console.warn('📝 FALLBACK: Não foi possível formatar hora:', hora);
+        console.warn('Não foi possível formatar hora:', hora);
         return '00:00';
     },
 
@@ -849,11 +838,9 @@ async function buscarReserva() {
 }
 
 /**
- * Mostrar resultado da busca - Versão Ultra-Defensiva (v2.1 - ${new Date().toISOString()})
+ * Mostrar resultado da busca
  */
 function mostrarResultadoBusca(reservas) {
-    console.log('🔍 NOVA VERSÃO - Entrando em mostrarResultadoBusca:', reservas);
-    console.log('🔍 Tipo de dados recebidos:', typeof reservas, Array.isArray(reservas));
     const resultadoDiv = document.getElementById('resultadoBusca');
     
     // Se for um array de reservas (recorrentes), mostrar todas
