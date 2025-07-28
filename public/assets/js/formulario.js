@@ -2,7 +2,7 @@
  * ReservaLAB - Formulário de Reservas
  * Sistema de Reservas de Laboratórios e Equipamentos - FAEN/UFGD
  * Desenvolvido por Carlos Henrique C. de Oliveira
- * Versão: 1.0.0 - Corrigida em 28/07/2025
+ * Versão: 1.0.1 - Corrigida definitivamente em 28/07/2025
  */
 
 // Objeto com utilitários para formulário
@@ -1064,7 +1064,6 @@ function mostrarResultadoBusca(reservas) {
     
     // Função para buscar reserva por protocolo - wrapper global
     async function buscarReservaGlobal() {
-        console.log('🔍 buscarReservaGlobal chamada');
         try {
             // Chamar diretamente a implementação original
             const protocolo = document.getElementById('protocoloBusca')?.value?.trim();
