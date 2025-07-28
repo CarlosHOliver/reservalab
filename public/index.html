@@ -107,11 +107,17 @@
                                     <i class="bi bi-calendar-event"></i> Dados da Reserva
                                 </h5>
                                 
+                                <div class="alert alert-info mb-3">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Importante:</strong> Reservas podem ser solicitadas para os próximos 2 meses a partir de hoje.
+                                </div>
+                                
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label for="dataReserva" class="form-label">Data da Reserva *</label>
                                         <input type="date" class="form-control" id="dataReserva" required>
                                         <div class="invalid-feedback">Por favor, selecione uma data.</div>
+                                        <small class="text-muted">Reservas podem ser feitas com até 2 meses de antecedência</small>
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="horaInicio" class="form-label">Hora de Início *</label>
@@ -145,9 +151,10 @@
                                         </div>
                                         <div class="col-md-6">
                                             <input type="date" class="form-control" id="recorrenciaFim" placeholder="Data fim da recorrência" disabled>
+                                            <div class="invalid-feedback">Data final da recorrência inválida.</div>
                                         </div>
                                     </div>
-                                    <small class="text-muted">Selecione se deseja repetir esta reserva em outros dias</small>
+                                    <small class="text-muted">Selecione se deseja repetir esta reserva em outros dias (máximo 2 meses à frente)</small>
                                 </div>
                             </div>
 

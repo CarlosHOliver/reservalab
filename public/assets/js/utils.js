@@ -205,14 +205,104 @@ const DateUtils = {
     },
 
     /**
-     * Obtém a data máxima para reservas (6 meses à frente, formato ISO)
+     * Obtém a data máxima para reservas (2 meses à frente, formato ISO)
      */
     getDataMaxima() {
-        return this.getCurrentCuiabaDate().plus({ months: 6 }).toISODate();
+        return this.getCurrentCuiabaDate().plus({ months: 2 }).toISODate();
+    }
+};
+
+// Utilitários específicos para reservas
+const ReservaUtils = {
+    /**
+     * Calcular datas para recorrência
+     */
+    calcularRecorrencia(dataInicial, tipoRecorrencia, dataFim) {
+        if (!dataInicial || !tipoRecorrencia || tipoRecorrencia === 'nenhuma' || !dataFim) {
+            return [new Date(dataInicial)];
+        }
+
+        const datas = [];
+        const dataInicio = new Date(dataInicial);
+        const dataLimite = new Date(dataFim);
+        const dataAtual = new Date(dataInicio);
+
+        // Incluir a data inicial
+        datas.push(new Date(dataAtual));
+
+        while (dataAtual < dataLimite) {
+            switch (tipoRecorrencia) {
+                case 'diaria':
+                    dataAtual.setDate(dataAtual.getDate() + 1);
+                    break;
+                case 'semanal':
+                    dataAtual.setDate(dataAtual.getDate() + 7);
+                    break;
+                case 'mensal':
+                    dataAtual.setMonth(dataAtual.getMonth() + 1);
+                    break;
+                default:
+                    return datas; // Se tipo inválido, retorna apenas a data inicial
+            }
+
+            // Verificar se a nova data não ultrapassou o limite
+            if (dataAtual <= dataLimite) {
+                datas.push(new Date(dataAtual));
+            }
+        }
+
+        return datas;
+    },
+
+    /**
+     * Formatar status da reserva para exibição
+     */
+    formatarStatus(status) {
+        const statusMap = {
+            'pendente': { texto: 'Pendente', classe: 'bg-warning' },
+            'aprovada': { texto: 'Aprovada', classe: 'bg-success' },
+            'rejeitada': { texto: 'Rejeitada', classe: 'bg-danger' },
+            'cancelada': { texto: 'Cancelada', classe: 'bg-secondary' }
+        };
+
+        return statusMap[status] || { texto: 'Desconhecido', classe: 'bg-secondary' };
+    },
+
+    /**
+     * Verificar se uma reserva está em andamento
+     */
+    isReservaEmAndamento(dataReserva, horaInicio, horaFim) {
+        try {
+            const agora = DateUtils.getCurrentCuiabaDate();
+            const dataReservaDate = DateUtils.toCuiaba(dataReserva);
+            
+            // Verificar se é o mesmo dia
+            if (!agora.hasSame(dataReservaDate, 'day')) {
+                return false;
+            }
+
+            // Criar DateTime para início e fim da reserva
+            const inicioReserva = dataReservaDate.set({
+                hour: parseInt(horaInicio.split(':')[0]),
+                minute: parseInt(horaInicio.split(':')[1])
+            });
+            
+            const fimReserva = dataReservaDate.set({
+                hour: parseInt(horaFim.split(':')[0]),
+                minute: parseInt(horaFim.split(':')[1])
+            });
+
+            // Verificar se o horário atual está entre o início e fim da reserva
+            return agora >= inicioReserva && agora <= fimReserva;
+        } catch (error) {
+            console.error('Erro ao verificar se reserva está em andamento:', error);
+            return false;
+        }
     }
 };
 
 // Exportar para uso global
 window.Utils = Utils;
 window.DateUtils = DateUtils;
+window.ReservaUtils = ReservaUtils;
 

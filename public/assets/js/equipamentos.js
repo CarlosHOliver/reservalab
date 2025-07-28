@@ -38,7 +38,6 @@ async function inicializarPagina() {
         // Carregar equipamentos
         await carregarEquipamentos();
         
-        console.log('Página de equipamentos inicializada');
     } catch (error) {
         console.error('Erro ao inicializar página:', error);
         Utils.showToast('Erro ao carregar página de equipamentos', 'danger');

@@ -168,6 +168,7 @@ const API = {
                 const { data: reservaFilha, error } = await supabase
                     .from('reservas')
                     .insert([{
+                        protocolo: reservaPai.protocolo, // Usar o mesmo protocolo da reserva pai
                         nome_completo: dadosReserva.nomeCompleto,
                         siape_rga: dadosReserva.siapeRga,
                         email: dadosReserva.email,
@@ -210,27 +211,41 @@ const API = {
     },
 
     /**
-     * Buscar reserva por protocolo
+     * Buscar reservas por protocolo (incluindo recorrências)
      */
     async buscarReservaPorProtocolo(protocolo) {
         try {
+            console.log('🔍 API: Buscando protocolo:', protocolo);
+            
             const { data, error } = await supabase
                 .from('reservas')
                 .select(`
                     *,
                     laboratorios (nome),
-                    usuarios (nome),
                     reserva_equipamentos (
                         equipamentos (nome)
                     )
                 `)
-                .eq('reservas.protocolo', protocolo)
-                .single();
+                .eq('protocolo', protocolo)
+                .order('data_reserva', { ascending: true })
+                .order('hora_inicio', { ascending: true });
 
-            if (error) throw error;
+            console.log('🔍 API: Resultado da query:', { data, error });
+
+            if (error) {
+                console.error('🔍 API: Erro no Supabase:', error);
+                throw error;
+            }
+            
+            if (!data || data.length === 0) {
+                console.log('🔍 API: Nenhum dado encontrado para protocolo:', protocolo);
+                return { sucesso: false, erro: 'Reserva não encontrada' };
+            }
+            
+            console.log('🔍 API: Reserva(s) encontrada(s):', data);
             return { sucesso: true, dados: data };
         } catch (error) {
-            console.error('Erro ao buscar reserva:', error);
+            console.error('🔍 API: Erro geral ao buscar reserva:', error);
             return { sucesso: false, erro: error.message };
         }
     },
