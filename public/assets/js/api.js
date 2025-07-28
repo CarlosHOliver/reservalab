@@ -89,6 +89,28 @@ const API = {
     },
 
     /**
+     * Buscar todos os laboratórios
+     */
+    async buscarLaboratorios() {
+        try {
+            const { data, error } = await supabase
+                .from('laboratorios')
+                .select(`
+                    *,
+                    blocos (nome)
+                `)
+                .eq('ativo', true)
+                .order('nome');
+
+            if (error) throw error;
+            return { sucesso: true, dados: data };
+        } catch (error) {
+            console.error('Erro ao buscar laboratórios:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
      * Criar nova reserva
      */
     async criarReserva(dadosReserva) {

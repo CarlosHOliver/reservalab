@@ -32,6 +32,9 @@ async function inicializarPagina() {
         // Configurar eventos
         configurarEventos();
         
+        // Configurar visualização inicial
+        configurarVisualizacaoInicial();
+        
         // Carregar filtros
         await carregarFiltros();
         
@@ -42,6 +45,21 @@ async function inicializarPagina() {
         console.error('Erro ao inicializar página:', error);
         Utils.showToast('Erro ao carregar página de equipamentos', 'danger');
     }
+}
+
+/**
+ * Configurar visualização inicial
+ */
+function configurarVisualizacaoInicial() {
+    // Garantir que apenas a visualização cards esteja visível inicialmente
+    document.getElementById('viewCards').style.display = 'block';
+    document.getElementById('viewLista').style.display = 'none';
+    document.getElementById('viewTabela').style.display = 'none';
+    
+    // Garantir que o botão cards esteja ativo
+    document.getElementById('btnViewCards').classList.add('active');
+    document.getElementById('btnViewLista').classList.remove('active');
+    document.getElementById('btnViewTabela').classList.remove('active');
 }
 
 /**
