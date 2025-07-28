@@ -52,14 +52,25 @@ async function inicializarPagina() {
  */
 function configurarVisualizacaoInicial() {
     // Garantir que apenas a visualização cards esteja visível inicialmente
-    document.getElementById('viewCards').style.display = 'block';
-    document.getElementById('viewLista').style.display = 'none';
-    document.getElementById('viewTabela').style.display = 'none';
+    const viewCards = document.getElementById('viewCards');
+    const viewLista = document.getElementById('viewLista');
+    const viewTabela = document.getElementById('viewTabela');
+    
+    if (viewCards) viewCards.style.display = 'block';
+    if (viewLista) viewLista.style.display = 'none';
+    if (viewTabela) viewTabela.style.display = 'none';
     
     // Garantir que o botão cards esteja ativo
-    document.getElementById('btnViewCards').classList.add('active');
-    document.getElementById('btnViewLista').classList.remove('active');
-    document.getElementById('btnViewTabela').classList.remove('active');
+    const btnCards = document.getElementById('btnViewCards');
+    const btnLista = document.getElementById('btnViewLista');
+    const btnTabela = document.getElementById('btnViewTabela');
+    
+    if (btnCards) btnCards.classList.add('active');
+    if (btnLista) btnLista.classList.remove('active');
+    if (btnTabela) btnTabela.classList.remove('active');
+    
+    // Forçar estado inicial do visualizador
+    estadoEquipamentos.visualizacaoAtual = 'cards';
 }
 
 /**
@@ -118,8 +129,14 @@ async function carregarEquipamentos() {
             throw new Error(resultado.erro);
         }
         
-        estadoEquipamentos.equipamentos = resultado.dados;
-        estadoEquipamentos.equipamentosFiltrados = resultado.dados;
+        // Processar dados para incluir nome do bloco
+        const equipamentos = resultado.dados.map(equip => ({
+            ...equip,
+            bloco_nome: equip.blocos?.nome || 'N/A'
+        }));
+        
+        estadoEquipamentos.equipamentos = equipamentos;
+        estadoEquipamentos.equipamentosFiltrados = [...equipamentos];
         
         atualizarVisualizacao();
         atualizarContador();
