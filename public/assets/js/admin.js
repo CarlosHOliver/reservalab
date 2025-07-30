@@ -2322,30 +2322,58 @@ async function carregarBlocosEquipamento() {
  */
 async function salvarEquipamento() {
     try {
+        console.log('📝 Iniciando salvamento de equipamento...');
+        
         const form = document.getElementById('formEquipamento');
         const id = document.getElementById('equipamentoId').value;
         
         // Validar campos obrigatórios
         if (!form.checkValidity()) {
+            console.warn('⚠️ Formulário inválido');
             form.reportValidity();
             return;
         }
 
+        // Verificar se Supabase está disponível
+        if (typeof supabase === 'undefined') {
+            throw new Error('Cliente Supabase não inicializado');
+        }
+
+        // Coletar dados do formulário
+        const nome = document.getElementById('equipamentoNome').value.trim();
+        const patrimonio = document.getElementById('equipamentoPatrimonio').value.trim();
+        const blocoId = parseInt(document.getElementById('equipamentoBloco').value);
+        const local = document.getElementById('equipamentoLocal').value.trim();
+        const descricao = document.getElementById('equipamentoDescricao').value.trim();
+        const status = document.getElementById('equipamentoStatus').value;
+        const fotoUrl = document.getElementById('equipamentoFoto').value.trim();
+        const compartilhado = document.getElementById('equipamentoCompartilhado').checked;
+        const acompanhamento = document.getElementById('equipamentoAcompanhamento').checked;
+        const maxOcupantes = compartilhado ? parseInt(document.getElementById('equipamentoMaxOcupantes').value) || 1 : 1;
+        const ativo = document.getElementById('equipamentoAtivo').checked;
+
+        // Validações adicionais
+        if (!nome || !patrimonio || !blocoId || !local) {
+            alert('Por favor, preencha todos os campos obrigatórios (Nome, Patrimônio, Bloco e Local).');
+            return;
+        }
+
         const dadosEquipamento = {
-            nome: document.getElementById('equipamentoNome').value.trim(),
-            patrimonio: document.getElementById('equipamentoPatrimonio').value.trim(),
-            bloco_id: parseInt(document.getElementById('equipamentoBloco').value),
-            local: document.getElementById('equipamentoLocal').value.trim(),
-            descricao: document.getElementById('equipamentoDescricao').value.trim() || null,
-            status: document.getElementById('equipamentoStatus').value,
-            permitir_uso_compartilhado: document.getElementById('equipamentoCompartilhado').checked,
-            necessita_acompanhamento: document.getElementById('equipamentoAcompanhamento').checked,
-            quantidade_maxima_ocupantes: document.getElementById('equipamentoCompartilhado').checked ? 
-                parseInt(document.getElementById('equipamentoMaxOcupantes').value) || 1 : 1,
-            foto_url: document.getElementById('equipamentoFoto').value.trim() || null,
-            ativo: document.getElementById('equipamentoAtivo').checked,
+            nome,
+            patrimonio,
+            bloco_id: blocoId,
+            local,
+            descricao: descricao || null,
+            status,
+            permitir_uso_compartilhado: compartilhado,
+            necessita_acompanhamento: acompanhamento,
+            quantidade_maxima_ocupantes: maxOcupantes,
+            foto_url: fotoUrl || null,
+            ativo,
             updated_at: new Date().toISOString()
         };
+
+        console.log('📋 Dados do equipamento:', dadosEquipamento);
 
         let result;
         if (id) {
@@ -2354,37 +2382,92 @@ async function salvarEquipamento() {
             result = await supabase
                 .from('equipamentos')
                 .update(dadosEquipamento)
-                .eq('id', id);
+                .eq('id', id)
+                .select();
         } else {
             // Criar novo equipamento
             console.log('✨ Criando novo equipamento');
             dadosEquipamento.created_at = new Date().toISOString();
+            
+            // Verificar se patrimônio já existe
+            const { data: existePatrimonio, error: errorVerif } = await supabase
+                .from('equipamentos')
+                .select('id')
+                .eq('patrimonio', patrimonio)
+                .limit(1);
+
+            if (errorVerif) {
+                console.error('❌ Erro ao verificar patrimônio:', errorVerif);
+                throw new Error('Erro ao verificar patrimônio: ' + errorVerif.message);
+            }
+
+            if (existePatrimonio && existePatrimonio.length > 0) {
+                alert('Erro: Já existe um equipamento com este número de patrimônio.');
+                return;
+            }
+
             result = await supabase
                 .from('equipamentos')
-                .insert([dadosEquipamento]);
+                .insert([dadosEquipamento])
+                .select();
         }
 
-        if (result.error) throw result.error;
+        console.log('📤 Resultado da operação:', result);
 
-        console.log('✅ Equipamento salvo com sucesso');
+        if (result.error) {
+            console.error('❌ Erro do Supabase:', result.error);
+            
+            // Tratamento específico para diferentes tipos de erro
+            if (result.error.code === '23505') {
+                throw new Error('Já existe um equipamento com este número de patrimônio.');
+            } else if (result.error.code === '42501') {
+                throw new Error('Erro de permissão. Verifique as políticas de segurança da tabela equipamentos.');
+            } else if (result.error.message.includes('row-level security')) {
+                throw new Error('Erro de segurança de linha. Execute o script fix_rls_equipamentos.sql no Supabase.');
+            } else {
+                throw result.error;
+            }
+        }
+
+        console.log('✅ Equipamento salvo com sucesso:', result.data);
         
         // Fechar modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('modalEquipamento'));
-        modal.hide();
+        if (modal) {
+            modal.hide();
+        }
         
         // Recarregar lista
-        loadEquipamentos();
+        if (typeof loadEquipamentos === 'function') {
+            loadEquipamentos();
+        }
         
         // Mostrar sucesso
         alert(id ? 'Equipamento atualizado com sucesso!' : 'Equipamento criado com sucesso!');
 
     } catch (error) {
         console.error('❌ Erro ao salvar equipamento:', error);
-        if (error.message.includes('duplicate key')) {
-            alert('Erro: Já existe um equipamento com este número de patrimônio.');
+        
+        // Mensagens de erro mais específicas
+        let mensagemErro = 'Erro ao salvar equipamento: ';
+        
+        if (error.message.includes('patrimonio')) {
+            mensagemErro += 'Problema com número de patrimônio.';
+        } else if (error.message.includes('row-level security')) {
+            mensagemErro += 'Erro de permissão no banco de dados. Execute o script fix_rls_equipamentos.sql.';
+        } else if (error.message.includes('duplicate key')) {
+            mensagemErro += 'Já existe um equipamento com este número de patrimônio.';
         } else {
-            alert('Erro ao salvar equipamento: ' + error.message);
+            mensagemErro += error.message;
         }
+        
+        alert(mensagemErro);
+        
+        // Debug adicional
+        console.log('🔍 Debug - Estado do formulário:');
+        console.log('- Modal presente:', !!document.getElementById('modalEquipamento'));
+        console.log('- Supabase disponível:', typeof supabase !== 'undefined');
+        console.log('- Erro completo:', error);
     }
 }
 
