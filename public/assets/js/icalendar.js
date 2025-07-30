@@ -169,13 +169,13 @@ const ICalendarUtils = {
         }
 
         const classes = tamanho === 'sm' ? 'btn-sm' : '';
+        const texto = tamanho === 'sm' ? 'Calendário' : 'Adicionar ao Calendário';
         
         return `
             <button type="button" class="btn btn-success ${classes}" 
                     onclick="ICalendarUtils.downloadICS(${JSON.stringify(reserva).replace(/"/g, '&quot;')})"
-                    title="Adicionar ao calendário pessoal">
-                <i class="bi bi-calendar-plus"></i> 
-                ${tamanho !== 'sm' ? 'Adicionar ao Calendário' : ''}
+                    title="Baixar arquivo .ics para adicionar ao seu calendário pessoal (Google Calendar, Outlook, etc.)">
+                <i class="bi bi-calendar-plus"></i> ${texto}
             </button>
         `;
     },

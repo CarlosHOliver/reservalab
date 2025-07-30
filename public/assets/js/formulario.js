@@ -950,7 +950,7 @@ function mostrarResultadoBusca(reservas) {
                     
                     ${primeiraReserva.status === 'aprovada' ? `
                         <div class="mt-3 alert alert-success">
-                            <div class="d-flex align-items-center">
+                            <div class="d-flex align-items-center mb-2">
                                 <div class="flex-grow-1">
                                     <strong><i class="bi bi-file-earmark-text"></i> Solicitação de Acesso:</strong><br>
                                     <small class="text-muted">Obrigatório preencher e entregar à portaria do Prédio</small>
@@ -959,6 +959,15 @@ function mostrarResultadoBusca(reservas) {
                                     <a href="docs/Aut.Acesso.docx" class="btn btn-success btn-sm" download>
                                         <i class="bi bi-download"></i> Download
                                     </a>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <strong><i class="bi bi-calendar-plus"></i> Adicionar ao Calendário:</strong><br>
+                                    <small class="text-muted">Adicione esta reserva à sua agenda pessoal (Google Calendar, Outlook, etc.)</small>
+                                </div>
+                                <div>
+                                    ${ICalendarUtils.gerarBotaoDownload(primeiraReserva)}
                                 </div>
                             </div>
                         </div>
@@ -1038,7 +1047,7 @@ function mostrarResultadoBusca(reservas) {
                     
                     ${reserva.status === 'aprovada' ? `
                         <div class="mt-3 alert alert-success">
-                            <div class="d-flex align-items-center">
+                            <div class="d-flex align-items-center mb-2">
                                 <div class="flex-grow-1">
                                     <strong><i class="bi bi-file-earmark-text"></i> Solicitação de Acesso:</strong><br>
                                     <small class="text-muted">Obrigatório preencher e entregar à portaria do Prédio</small>
@@ -1047,6 +1056,15 @@ function mostrarResultadoBusca(reservas) {
                                     <a href="docs/Aut.Acesso.docx" class="btn btn-success btn-sm" download>
                                         <i class="bi bi-download"></i> Download
                                     </a>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <strong><i class="bi bi-calendar-plus"></i> Adicionar ao Calendário:</strong><br>
+                                    <small class="text-muted">Adicione esta reserva à sua agenda pessoal (Google Calendar, Outlook, etc.)</small>
+                                </div>
+                                <div>
+                                    ${ICalendarUtils.gerarBotaoDownload(reserva)}
                                 </div>
                             </div>
                         </div>
