@@ -254,8 +254,8 @@
                         <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Gerenciar Reservas</h5>
                     </div>
                     <div class="card-body">
-                        <div class="row mb-3">
-                            <div class="col-md-4">
+                        <div class="row mb-3 align-items-end">
+                            <div class="col-md-3">
                                 <select class="form-control" id="filtroStatus">
                                     <option value="">Todos os Status</option>
                                     <option value="pendente">Pendentes</option>
@@ -263,15 +263,21 @@
                                     <option value="rejeitada">Rejeitadas</option>
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <input type="date" class="form-control" id="filtroData">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <button class="btn btn-primary" onclick="filtrarReservas()">
                                     <i class="bi bi-search"></i> Filtrar
                                 </button>
                                 <button class="btn btn-secondary" onclick="exportarReservas()">
                                     <i class="bi bi-download"></i> Exportar
+                                </button>
+                            </div>
+                            <div class="col-md-3 text-end">
+                                <button class="btn btn-success" onclick="novaReservaAdmin()" title="Criar nova reserva pré-aprovada (apenas gestores/administradores)">
+                                    <i class="bi bi-plus-circle"></i> Nova Reserva
+                                    <span class="badge bg-light text-success ms-1">Pré-aprovada</span>
                                 </button>
                             </div>
                         </div>
@@ -624,6 +630,100 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nova Reserva Admin -->
+    <div class="modal fade" id="modalNovaReservaAdmin" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle"></i> Nova Reserva (Pré-aprovada)
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formNovaReservaAdmin">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary"><i class="bi bi-person"></i> Dados do Solicitante</h6>
+                                <div class="mb-3">
+                                    <label for="nomeCompleto" class="form-label">Nome Completo *</label>
+                                    <input type="text" class="form-control" id="nomeCompleto" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="siapeRga" class="form-label">SIAPE/RGA *</label>
+                                    <input type="text" class="form-control" id="siapeRga" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">E-mail *</label>
+                                    <input type="email" class="form-control" id="email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="telefone" class="form-label">Telefone</label>
+                                    <input type="tel" class="form-control" id="telefone">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-primary"><i class="bi bi-calendar"></i> Dados da Reserva</h6>
+                                <div class="mb-3">
+                                    <label for="dataReserva" class="form-label">Data da Reserva *</label>
+                                    <input type="date" class="form-control" id="dataReserva" required>
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label for="horaInicio" class="form-label">Hora Início *</label>
+                                            <input type="time" class="form-control" id="horaInicio" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label for="horaFim" class="form-label">Hora Fim *</label>
+                                            <input type="time" class="form-control" id="horaFim" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="laboratorioSelect" class="form-label">Laboratório</label>
+                                    <select class="form-control" id="laboratorioSelect">
+                                        <option value="">Selecione um laboratório</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="equipamentosSelect" class="form-label">Equipamentos</label>
+                                    <select class="form-control" id="equipamentosSelect" multiple>
+                                        <!-- Carregado dinamicamente -->
+                                    </select>
+                                    <div class="form-text">Mantenha Ctrl pressionado para selecionar múltiplos equipamentos</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="finalidade" class="form-label">Finalidade da Reserva *</label>
+                                    <textarea class="form-control" id="finalidade" rows="3" required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="professorAcompanhante" class="form-label">Professor/Técnico Responsável</label>
+                                    <input type="text" class="form-control" id="professorAcompanhante">
+                                </div>
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> <strong>Atenção:</strong> Esta reserva será criada com status <strong>APROVADA</strong> automaticamente.
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="salvarNovaReservaAdmin()">
+                        <i class="bi bi-check-circle"></i> Criar Reserva Aprovada
+                    </button>
                 </div>
             </div>
         </div>

@@ -176,6 +176,23 @@ function setupEventListeners() {
     // Alterar senha form
     document.getElementById('formAlterarSenha').addEventListener('submit', alterarSenha);
     
+    // Nova reserva admin form
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configurar validações do formulário de nova reserva
+        const dataReserva = document.getElementById('dataReserva');
+        const horaInicio = document.getElementById('horaInicio');
+        const horaFim = document.getElementById('horaFim');
+        
+        if (dataReserva) {
+            dataReserva.addEventListener('change', validarDataReserva);
+        }
+        
+        if (horaInicio && horaFim) {
+            horaInicio.addEventListener('change', validarHorarios);
+            horaFim.addEventListener('change', validarHorarios);
+        }
+    });
+    
     // Checkbox de laboratório compartilhado
     document.addEventListener('DOMContentLoaded', function() {
         const checkboxCompartilhado = document.getElementById('laboratorioCompartilhado');
@@ -186,6 +203,42 @@ function setupEventListeners() {
             });
         }
     });
+}
+
+/**
+ * Validar data da reserva
+ */
+function validarDataReserva() {
+    const dataInput = document.getElementById('dataReserva');
+    const hoje = new Date();
+    const dataReserva = new Date(dataInput.value);
+    
+    hoje.setHours(0, 0, 0, 0);
+    dataReserva.setHours(0, 0, 0, 0);
+    
+    if (dataReserva < hoje) {
+        dataInput.setCustomValidity('A data da reserva não pode ser no passado');
+        dataInput.reportValidity();
+    } else {
+        dataInput.setCustomValidity('');
+    }
+}
+
+/**
+ * Validar horários
+ */
+function validarHorarios() {
+    const horaInicio = document.getElementById('horaInicio');
+    const horaFim = document.getElementById('horaFim');
+    
+    if (horaInicio.value && horaFim.value) {
+        if (horaInicio.value >= horaFim.value) {
+            horaFim.setCustomValidity('A hora de fim deve ser posterior à hora de início');
+            horaFim.reportValidity();
+        } else {
+            horaFim.setCustomValidity('');
+        }
+    }
 }
 
 /**
@@ -311,6 +364,25 @@ function controlarVisibilidadeMenus() {
     }
     
     console.log('🎯 Controle de menus finalizado para perfil:', perfil);
+}
+
+/**
+ * Controlar visibilidade de elementos baseado nas permissões (chamado quando seções são carregadas)
+ */
+function controlarVisibilidadeElementos() {
+    if (!currentUser) return;
+    
+    // Botão Nova Reserva - apenas para administradores e gestores
+    const btnNovaReserva = document.querySelector('button[onclick="novaReservaAdmin()"]');
+    if (btnNovaReserva) {
+        if (verificarPermissao('reservas')) {
+            btnNovaReserva.style.display = 'inline-block';
+            console.log('✅ Botão Nova Reserva visível para perfil:', currentUser.perfil);
+        } else {
+            btnNovaReserva.style.display = 'none';
+            console.log('🚫 Botão Nova Reserva oculto para perfil:', currentUser.perfil);
+        }
+    }
 }
 
 /**
@@ -692,6 +764,9 @@ async function loadReservas() {
             </tr>
         `).join('');
         
+        // Controlar visibilidade dos elementos baseado nas permissões
+        setTimeout(() => controlarVisibilidadeElementos(), 100);
+        
     } catch (error) {
         console.error('Erro ao carregar reservas:', error);
     }
@@ -925,6 +1000,307 @@ function filtrarReservas() {
 function exportarReservas() {
     // TODO: Implementar exportação
     alert('Funcionalidade de exportação será implementada em breve');
+}
+
+/**
+ * Abrir modal para criar nova reserva (administradores/gestores)
+ */
+function novaReservaAdmin() {
+    // Verificar se o usuário tem permissão
+    if (!verificarPermissao('reservas')) {
+        alert('Você não tem permissão para criar reservas');
+        return;
+    }
+    
+    console.log('🚀 Abrindo modal de nova reserva para admin/gestor');
+    
+    // Limpar formulário
+    document.getElementById('formNovaReservaAdmin').reset();
+    
+    // Definir data mínima como hoje
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById('dataReserva').min = hoje;
+    
+    // Carregar dados para os selects
+    carregarLaboratoriosSelect();
+    carregarEquipamentosSelect();
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('modalNovaReservaAdmin'));
+    modal.show();
+}
+
+/**
+ * Carregar laboratórios para o select
+ */
+async function carregarLaboratoriosSelect() {
+    try {
+        const { data: laboratorios, error } = await supabase
+            .from('laboratorios')
+            .select('id, nome')
+            .eq('ativo', true)
+            .order('nome');
+        
+        if (error) throw error;
+        
+        const select = document.getElementById('laboratorioSelect');
+        select.innerHTML = '<option value="">Selecione um laboratório</option>';
+        
+        laboratorios.forEach(lab => {
+            const option = document.createElement('option');
+            option.value = lab.id;
+            option.textContent = lab.nome;
+            select.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error('Erro ao carregar laboratórios:', error);
+    }
+}
+
+/**
+ * Carregar equipamentos para o select
+ */
+async function carregarEquipamentosSelect() {
+    try {
+        const { data: equipamentos, error } = await supabase
+            .from('equipamentos')
+            .select('id, nome, patrimonio')
+            .eq('ativo', true)
+            .eq('status', 'disponivel')
+            .order('nome');
+        
+        if (error) throw error;
+        
+        const select = document.getElementById('equipamentosSelect');
+        select.innerHTML = '';
+        
+        equipamentos.forEach(equip => {
+            const option = document.createElement('option');
+            option.value = equip.id;
+            option.textContent = `${equip.nome} (${equip.patrimonio})`;
+            select.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error('Erro ao carregar equipamentos:', error);
+    }
+}
+
+/**
+ * Salvar nova reserva criada pelo admin/gestor
+ */
+async function salvarNovaReservaAdmin() {
+    try {
+        const form = document.getElementById('formNovaReservaAdmin');
+        
+        // Validar formulário
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        // Coletar dados do formulário
+        const dadosReserva = {
+            nome_completo: document.getElementById('nomeCompleto').value.trim(),
+            siape_rga: document.getElementById('siapeRga').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            telefone: document.getElementById('telefone').value.trim(),
+            data_reserva: document.getElementById('dataReserva').value,
+            hora_inicio: document.getElementById('horaInicio').value,
+            hora_fim: document.getElementById('horaFim').value,
+            laboratorio_id: document.getElementById('laboratorioSelect').value || null,
+            finalidade: document.getElementById('finalidade').value.trim(),
+            professor_acompanhante: document.getElementById('professorAcompanhante').value.trim(),
+            status: 'aprovada', // Já aprovada por ser criada por admin/gestor
+            aprovado_por: currentUser.id,
+            data_aprovacao: new Date().toISOString(),
+            criado_por_admin: true // Flag para identificar reservas criadas internamente
+        };
+        
+        // Validações adicionais
+        if (dadosReserva.hora_inicio >= dadosReserva.hora_fim) {
+            alert('A hora de fim deve ser posterior à hora de início');
+            return;
+        }
+        
+        // Verificar conflitos de horário
+        const conflito = await verificarConflitoHorario(
+            dadosReserva.data_reserva,
+            dadosReserva.hora_inicio,
+            dadosReserva.hora_fim,
+            dadosReserva.laboratorio_id
+        );
+        
+        if (conflito.temConflito) {
+            const confirmar = confirm(
+                `⚠️ ATENÇÃO: Conflito de horário detectado!\n\n` +
+                `Existe uma reserva aprovada no mesmo período:\n` +
+                `${conflito.detalhes}\n\n` +
+                `Deseja continuar mesmo assim? (A reserva será criada, mas você deverá resolver o conflito manualmente)`
+            );
+            
+            if (!confirmar) {
+                return;
+            }
+        }
+        
+        // Gerar protocolo único
+        dadosReserva.protocolo = await gerarProtocoloReserva();
+        
+        console.log('💾 Salvando nova reserva:', dadosReserva);
+        
+        // Salvar reserva no banco
+        const { data: novaReserva, error: errorReserva } = await supabase
+            .from('reservas')
+            .insert([dadosReserva])
+            .select('id')
+            .single();
+        
+        if (errorReserva) throw errorReserva;
+        
+        console.log('✅ Reserva criada com ID:', novaReserva.id);
+        
+        // Salvar equipamentos selecionados
+        const equipamentosSelecionados = Array.from(document.getElementById('equipamentosSelect').selectedOptions)
+            .map(option => parseInt(option.value));
+        
+        if (equipamentosSelecionados.length > 0) {
+            const reservaEquipamentos = equipamentosSelecionados.map(equipId => ({
+                reserva_id: novaReserva.id,
+                equipamento_id: equipId
+            }));
+            
+            const { error: errorEquipamentos } = await supabase
+                .from('reserva_equipamentos')
+                .insert(reservaEquipamentos);
+            
+            if (errorEquipamentos) {
+                console.error('Erro ao salvar equipamentos:', errorEquipamentos);
+                // Não falha a operação por isso
+            } else {
+                console.log('✅ Equipamentos associados à reserva');
+            }
+        }
+        
+        // Fechar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalNovaReservaAdmin'));
+        modal.hide();
+        
+        // Mostrar sucesso
+        const mensagemSucesso = conflito.temConflito ? 
+            `Reserva criada com sucesso!\n\nProtocolo: ${dadosReserva.protocolo}\nStatus: APROVADA\n\n⚠️ ATENÇÃO: Existe conflito de horário que deve ser resolvido manualmente.` :
+            `Reserva criada com sucesso!\n\nProtocolo: ${dadosReserva.protocolo}\nStatus: APROVADA\n\nA reserva foi automaticamente aprovada.`;
+        
+        alert(mensagemSucesso);
+        
+        // Recarregar dados
+        loadDashboardData();
+        if (document.getElementById('section-reservas').style.display !== 'none') {
+            loadReservas();
+        }
+        
+    } catch (error) {
+        console.error('Erro ao salvar reserva:', error);
+        alert('Erro ao criar reserva: ' + error.message);
+    }
+}
+
+/**
+ * Verificar conflitos de horário para laboratórios
+ */
+async function verificarConflitoHorario(dataReserva, horaInicio, horaFim, laboratorioId) {
+    try {
+        if (!laboratorioId) {
+            return { temConflito: false };
+        }
+        
+        const { data: reservasConflito, error } = await supabase
+            .from('reservas')
+            .select(`
+                id, protocolo, nome_completo, hora_inicio, hora_fim,
+                laboratorios (nome)
+            `)
+            .eq('data_reserva', dataReserva)
+            .eq('laboratorio_id', laboratorioId)
+            .eq('status', 'aprovada');
+        
+        if (error) throw error;
+        
+        if (!reservasConflito || reservasConflito.length === 0) {
+            return { temConflito: false };
+        }
+        
+        // Verificar sobreposição de horários
+        for (const reserva of reservasConflito) {
+            const inicioExistente = reserva.hora_inicio;
+            const fimExistente = reserva.hora_fim;
+            
+            // Verifica se há sobreposição
+            if (
+                (horaInicio >= inicioExistente && horaInicio < fimExistente) ||
+                (horaFim > inicioExistente && horaFim <= fimExistente) ||
+                (horaInicio <= inicioExistente && horaFim >= fimExistente)
+            ) {
+                return {
+                    temConflito: true,
+                    detalhes: `Protocolo: ${reserva.protocolo}\nSolicitante: ${reserva.nome_completo}\nHorário: ${inicioExistente} - ${fimExistente}\nLaboratório: ${reserva.laboratorios?.nome || 'N/A'}`
+                };
+            }
+        }
+        
+        return { temConflito: false };
+        
+    } catch (error) {
+        console.error('Erro ao verificar conflitos:', error);
+        return { temConflito: false };
+    }
+}
+
+/**
+ * Gerar protocolo único para a reserva
+ */
+async function gerarProtocoloReserva() {
+    try {
+        // Formato: [ano][mes][6digitos] (ex: 202507000001)
+        const hoje = new Date();
+        const ano = hoje.getFullYear();
+        const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+        const prefixo = `${ano}${mes}`;
+        
+        // Buscar último número do mês
+        const { data, error } = await supabase
+            .from('reservas')
+            .select('protocolo')
+            .like('protocolo', `${prefixo}%`)
+            .order('protocolo', { ascending: false })
+            .limit(1);
+        
+        if (error) throw error;
+        
+        let proximoNumero = 1;
+        if (data && data.length > 0) {
+            const ultimoProtocolo = data[0].protocolo;
+            // Extrair os últimos 6 dígitos do protocolo
+            const numeroMatch = ultimoProtocolo.match(/\d{6}(\d{6})$/);
+            if (numeroMatch) {
+                proximoNumero = parseInt(numeroMatch[1]) + 1;
+            }
+        }
+        
+        // Formatar número com 6 dígitos
+        const numeroFormatado = String(proximoNumero).padStart(6, '0');
+        return `${prefixo}${numeroFormatado}`;
+        
+    } catch (error) {
+        console.error('Erro ao gerar protocolo:', error);
+        // Fallback: usar formato correto com timestamp
+        const hoje = new Date();
+        const ano = hoje.getFullYear();
+        const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+        const timestamp = String(Date.now()).slice(-6);
+        return `${ano}${mes}${timestamp}`;
+    }
 }
 
 /**

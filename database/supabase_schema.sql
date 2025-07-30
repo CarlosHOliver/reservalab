@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS reservas (
     motivo_rejeicao TEXT,
     aprovado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
     data_aprovacao TIMESTAMP WITH TIME ZONE,
+    criado_por_admin BOOLEAN DEFAULT FALSE, -- indica se foi criada por admin/gestor
     recorrencia_tipo VARCHAR(20) DEFAULT 'nenhuma', -- nenhuma, diaria, semanal, mensal
     recorrencia_fim DATE,
     reserva_pai_id INTEGER REFERENCES reservas(id) ON DELETE CASCADE,
@@ -216,6 +217,7 @@ CREATE INDEX IF NOT EXISTS idx_reservas_data_reserva ON reservas(data_reserva);
 CREATE INDEX IF NOT EXISTS idx_reservas_status ON reservas(status);
 CREATE INDEX IF NOT EXISTS idx_reservas_protocolo ON reservas(protocolo);
 CREATE INDEX IF NOT EXISTS idx_reservas_email ON reservas(email);
+CREATE INDEX IF NOT EXISTS idx_reservas_criado_por_admin ON reservas(criado_por_admin);
 CREATE INDEX IF NOT EXISTS idx_equipamentos_status ON equipamentos(status);
 CREATE INDEX IF NOT EXISTS idx_equipamentos_bloco ON equipamentos(bloco_id);
 CREATE INDEX IF NOT EXISTS idx_laboratorios_bloco ON laboratorios(bloco_id);
