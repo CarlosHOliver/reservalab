@@ -5,7 +5,8 @@
  * Idealizado e Desenvolvido por Carlos Henrique C. de Oliveira - Tec. Laboratório de Informática FAEN/UFGD - Engenheiro da Computação
  */
 
-const Utils = {
+if (typeof Utils === 'undefined') {
+    var Utils = {
     /**
      * Exibe um toast de notificação.
      */
@@ -145,9 +146,11 @@ const Utils = {
         return valido;
     }
 };
+}
 
 // Utilitários de data/hora para fuso horário de Cuiabá usando Luxon
-const DateUtils = {
+if (typeof DateUtils === 'undefined') {
+    var DateUtils = {
     ZONA: 'America/Cuiaba',
 
     /**
@@ -220,9 +223,11 @@ const DateUtils = {
         return this.getCurrentCuiabaDate().plus({ months: 2 }).toISODate();
     }
 };
+}
 
 // Utilitários específicos para reservas
-const ReservaUtils = {
+if (typeof ReservaUtils === 'undefined') {
+    var ReservaUtils = {
     /**
      * Calcular datas para recorrência
      */
@@ -309,9 +314,12 @@ const ReservaUtils = {
         }
     }
 };
+}
 
 // Exportar para uso global
-window.Utils = Utils;
-window.DateUtils = DateUtils;
-window.ReservaUtils = ReservaUtils;
+if (typeof window !== 'undefined') {
+    window.Utils = Utils;
+    window.DateUtils = DateUtils;
+    window.ReservaUtils = ReservaUtils;
+}
 

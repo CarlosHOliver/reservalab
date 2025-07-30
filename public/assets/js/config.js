@@ -6,19 +6,19 @@
  */
 
 // Configurações do Supabase
-const CONFIG = {
+var CONFIG = {
     SUPABASE_URL: 'https://ptyzutlqliekgxktcyru.supabase.co',
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0eXp1dGxxbGlla2d4a3RjeXJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMDgwNTIsImV4cCI6MjA2ODg4NDA1Mn0.xErQ_zcI6yqUbCnCqSUL6gkwmu4eyjSNMDyXAn0m7dk'
 };
 
 // Compatibilidade com código antigo
-const SUPABASE_CONFIG = {
+var SUPABASE_CONFIG = {
     url: CONFIG.SUPABASE_URL,
     anonKey: CONFIG.SUPABASE_ANON_KEY
 };
 
-// Inicializar cliente Supabase com verificação
-let supabase;
+// Inicializar cliente Supabase
+var supabase;
 try {
     if (typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
         supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
@@ -31,7 +31,7 @@ try {
 }
 
 // Constantes do sistema
-const SISTEMA_CONFIG = {
+var SISTEMA_CONFIG = {
     nome: 'ReservaLAB',
     versao: '1.0.0',
     desenvolvedor: 'Carlos Henrique C. de Oliveira - Laboratórios de Informática - FAEN/UFGD',
@@ -62,71 +62,61 @@ const SISTEMA_CONFIG = {
         REJEITADA: 'rejeitada'
     },
     
-    statusEquipamento: {
-        DISPONIVEL: 'disponivel',
-        EM_MANUTENCAO: 'em_manutencao',
-        INATIVO: 'inativo'
-    },
-    
-    perfilUsuario: {
-        ADMINISTRADOR: 'administrador',
-        GESTOR: 'gestor'
-    },
-    
-    tipoRecorrencia: {
-        NENHUMA: 'nenhuma',
-        DIARIA: 'diaria',
-        SEMANAL: 'semanal',
-        MENSAL: 'mensal'
-    },
-    
-    // Blocos da FAEN
-    blocos: [
-        { id: 1, nome: 'FAEN/Produção' },
-        { id: 2, nome: 'FAEN/Civil' },
-        { id: 3, nome: 'FAEN/Energia' },
-        { id: 4, nome: 'FAEN/Alimentos' },
-        { id: 5, nome: 'FAEN/Mecânica' }
-    ],
-    
-    // Mensagens do sistema
-    mensagens: {
-        sucesso: {
-            reservaCriada: 'Solicitação de reserva enviada com sucesso!',
-            dadosSalvos: 'Dados salvos com sucesso!',
-            operacaoRealizada: 'Operação realizada com sucesso!'
-        },
-        erro: {
-            emailInvalido: 'Por favor, utilize um e-mail institucional (@ufgd.edu.br ou @academico.ufgd.edu.br)',
-            horarioInvalido: 'Horário inválido. Verifique se a hora de fim é posterior à hora de início',
-            conflitosDetectados: 'Conflitos de horário detectados. Por favor, selecione outro horário',
-            camposObrigatorios: 'Por favor, preencha todos os campos obrigatórios',
-            erroConexao: 'Erro de conexão. Tente novamente em alguns instantes',
-            protocoloNaoEncontrado: 'Protocolo não encontrado',
-            semRecursosSelecionados: 'Por favor, selecione pelo menos um laboratório ou equipamento',
-            professorObrigatorio: 'Professor/técnico responsável é obrigatório para os recursos selecionados'
-        },
-        aviso: {
-            acompanhamentoNecessario: 'Os recursos selecionados necessitam de acompanhamento de professor ou técnico',
-            recorrenciaAtiva: 'Esta reserva será repetida conforme a recorrência selecionada',
-            verificandoConflitos: 'Verificando conflitos de horário...'
-        }
+    // Tipos de usuário
+    tiposUsuario: {
+        PROFESSOR: 'professor',
+        TECNICO: 'tecnico',
+        ALUNO: 'aluno',
+        SERVIDOR: 'servidor'
     },
     
     // Configurações de interface
-    interface: {
-        itensPorPagina: 10,
-        tempoAtualizacao: 30000, // 30 segundos
-        tempoDebounce: 500, // 500ms para validações
-        animacaoDuracao: 300 // 300ms para animações
+    ui: {
+        toastDuracao: 3000,
+        modalAnimacao: 300,
+        corSucesso: '#198754',
+        corAviso: '#ffc107',
+        corErro: '#dc3545'
+    },
+    
+    // Limites
+    limites: {
+        maxReservasPorUsuario: 10,
+        maxDiasAntecedencia: 60,
+        minMinutosReserva: 30,
+        maxHorasReserva: 8
+    },
+    
+    // Configurações de email
+    email: {
+        assuntoNovaReserva: '[ReservaLAB] Nova Reserva Cadastrada',
+        assuntoAprovacao: '[ReservaLAB] Reserva Aprovada',
+        assuntoRejeicao: '[ReservaLAB] Reserva Rejeitada',
+        assinatura: 'Sistema ReservaLAB - FAEN/UFGD'
+    },
+    
+    // URLs e endpoints
+    urls: {
+        sistema: 'https://reservalab.vercel.app',
+        suporte: 'suporte@ufgd.edu.br',
+        documentacao: '/docs'
+    },
+    
+    // Configurações de debug
+    debug: {
+        ativo: false,
+        nivel: 'info'
+    },
+    
+    // Configurações de cache
+    cache: {
+        tempoVidaMinutos: 5,
+        chaveVersao: 'v1.0.0'
     }
 };
 
-// Utilitários de data/hora para fuso horário de Cuiabá
-
-
 // Validadores
-const Validadores = {
+var Validadores = {
     /**
      * Validar e-mail institucional
      */
@@ -163,8 +153,8 @@ const Validadores = {
 };
 
 // Exportar para uso global
+window.CONFIG = CONFIG;
+window.SUPABASE_CONFIG = SUPABASE_CONFIG;
 window.SISTEMA_CONFIG = SISTEMA_CONFIG;
-// window.DateUtils = DateUtils; // Removido: agora definido apenas em utils.js
 window.Validadores = Validadores;
 window.supabase = supabase;
-

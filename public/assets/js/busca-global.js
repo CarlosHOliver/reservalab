@@ -179,7 +179,7 @@ async function buscarReserva() {
 }
 
 /**
- * Mostrar resultado da busca - FUNÇÃO GLOBAL
+ * Mostrar resultado da busca - FUNÇÃO GLOBAL (Padrão Index Completo)
  */
 function mostrarResultadoBusca(reservas) {
     console.log('🔍 [BuscaGlobal] Mostrando resultado:', reservas);
@@ -187,70 +187,200 @@ function mostrarResultadoBusca(reservas) {
     const resultadoDiv = document.getElementById('resultadoBusca');
     if (!resultadoDiv) return;
     
-    // Processar resultado
-    const isArray = Array.isArray(reservas);
-    const listaReservas = isArray ? reservas : [reservas];
-    const primeiraReserva = listaReservas[0];
-    
-    if (!primeiraReserva) {
-        resultadoDiv.innerHTML = '<div class="alert alert-warning">Dados de reserva inválidos</div>';
-        return;
-    }
+    // Se for um array de reservas (recorrentes), mostrar todas
+    if (Array.isArray(reservas)) {
+        console.log('Processando array de reservas (recorrente):', reservas.length, 'reservas');
+        const primeiraReserva = reservas[0];
+        const status = formatarStatus(primeiraReserva.status);
+        
+        // Montar lista de recursos da primeira reserva (todas têm os mesmos recursos)
+        let recursos = [];
+        if (primeiraReserva.laboratorios) {
+            recursos.push(`Laboratório: ${primeiraReserva.laboratorios.nome}`);
+        }
+        if (primeiraReserva.reserva_equipamentos && primeiraReserva.reserva_equipamentos.length > 0) {
+            const equipamentos = primeiraReserva.reserva_equipamentos.map(re => re.equipamentos.nome).join(', ');
+            recursos.push(`Equipamentos: ${equipamentos}`);
+        }
 
-    // Formatação
-    const status = formatarStatus(primeiraReserva.status);
-    const dataFormatada = formatarData(primeiraReserva.data_reserva);
-    const horaInicio = primeiraReserva.hora_inicio ? primeiraReserva.hora_inicio.substring(0, 5) : 'N/A';
-    const horaFim = primeiraReserva.hora_fim ? primeiraReserva.hora_fim.substring(0, 5) : 'N/A';
-    
-    // Recursos
-    let recursos = [];
-    if (primeiraReserva.laboratorios && primeiraReserva.laboratorios.nome) {
-        recursos.push(`Laboratório: ${primeiraReserva.laboratorios.nome}`);
-    }
-    if (primeiraReserva.reserva_equipamentos && primeiraReserva.reserva_equipamentos.length > 0) {
-        const equipamentos = primeiraReserva.reserva_equipamentos
-            .map(re => re.equipamentos ? re.equipamentos.nome : 'N/A')
-            .join(', ');
-        recursos.push(`Equipamentos: ${equipamentos}`);
-    }
+        // Determinar se é recorrente
+        const isRecorrente = reservas.length > 1;
+        const tipoRecorrencia = primeiraReserva.recorrencia_tipo;
 
-    resultadoDiv.innerHTML = `
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">Protocolo: ${primeiraReserva.protocolo}</h6>
-                <span class="badge ${status.classe}">${status.texto}</span>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>Solicitante:</strong><br>
-                        ${primeiraReserva.nome_completo || 'N/A'}<br>
-                        <small class="text-muted">${primeiraReserva.email || 'N/A'}</small>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Data/Horário:</strong><br>
-                        ${dataFormatada}<br>
-                        <small class="text-muted">${horaInicio} às ${horaFim}</small>
+        resultadoDiv.innerHTML = `
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Protocolo: ${primeiraReserva.protocolo}</h6>
+                    <div>
+                        <span class="badge ${status.classe}">${status.texto}</span>
+                        ${isRecorrente ? `<span class="badge bg-info ms-1">Recorrente (${reservas.length}x)</span>` : ''}
                     </div>
                 </div>
-                <div class="mt-3">
-                    <strong>Recursos:</strong><br>
-                    ${recursos.length > 0 ? recursos.join('<br>') : 'N/A'}
-                </div>
-                <div class="mt-3">
-                    <strong>Finalidade:</strong><br>
-                    ${primeiraReserva.finalidade || 'N/A'}
-                </div>
-                ${primeiraReserva.motivo_rejeicao ? `
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Solicitante:</strong><br>
+                            ${primeiraReserva.nome_completo}<br>
+                            <small class="text-muted">${primeiraReserva.email}</small>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Recursos:</strong><br>
+                            ${recursos.join('<br>')}
+                        </div>
+                    </div>
                     <div class="mt-3">
-                        <strong>Motivo da Rejeição:</strong><br>
-                        <span class="text-danger">${primeiraReserva.motivo_rejeicao}</span>
+                        <strong>Finalidade:</strong><br>
+                        ${primeiraReserva.finalidade}
                     </div>
-                ` : ''}
+                    
+                    ${isRecorrente ? `
+                        <div class="mt-3">
+                            <strong>Tipo de Recorrência:</strong> ${tipoRecorrencia === 'diaria' ? 'Diária' : tipoRecorrencia === 'semanal' ? 'Semanal' : 'Mensal'}<br>
+                            <strong>Total de Reservas:</strong> ${reservas.length}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="mt-3">
+                        <strong>${isRecorrente ? 'Datas das Reservas:' : 'Data/Horário:'}</strong><br>
+                        <div class="row">
+                            ${reservas.map(reserva => {
+                                const statusReserva = formatarStatus(reserva.status);
+                                const dataFormatada = formatarData(reserva.data_reserva);
+                                const horaInicio = reserva.hora_inicio ? reserva.hora_inicio.substring(0, 5) : 'N/A';
+                                const horaFim = reserva.hora_fim ? reserva.hora_fim.substring(0, 5) : 'N/A';
+                                
+                                return `
+                                    <div class="col-md-6 mb-2">
+                                        <div class="border rounded p-2 small">
+                                            <strong>${dataFormatada}</strong><br>
+                                            ${horaInicio} às ${horaFim}<br>
+                                            <span class="badge ${statusReserva.classe} badge-sm">${statusReserva.texto}</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                    
+                    ${primeiraReserva.motivo_rejeicao ? `
+                        <div class="mt-3">
+                            <strong>Motivo da Rejeição:</strong><br>
+                            <span class="text-danger">${primeiraReserva.motivo_rejeicao}</span>
+                        </div>
+                    ` : ''}
+                    
+                    ${primeiraReserva.status === 'aprovada' ? `
+                        <div class="mt-3 alert alert-success">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="flex-grow-1">
+                                    <strong><i class="bi bi-file-earmark-text"></i> Solicitação de Acesso:</strong><br>
+                                    <small class="text-muted">Obrigatório preencher e entregar à portaria do Prédio</small>
+                                </div>
+                                <div>
+                                    <a href="docs/Aut.Acesso.docx" class="btn btn-success btn-sm" download>
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <strong><i class="bi bi-calendar-plus"></i> Adicionar ao Calendário:</strong><br>
+                                    <small class="text-muted">Adicione esta reserva à sua agenda pessoal (Google Calendar, Outlook, etc.)</small>
+                                </div>
+                                <div>
+                                    <button class="btn btn-outline-info btn-sm" onclick="downloadICS('${primeiraReserva.protocolo}')">
+                                        <i class="bi bi-calendar-plus"></i> Download .ics
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
             </div>
-        </div>
-    `;
+        `;
+    } else {
+        // Compatibilidade com reservas individuais
+        console.log('Processando reserva individual:', reservas);
+        const reserva = reservas;
+        const status = formatarStatus(reserva.status);
+        const dataFormatada = formatarData(reserva.data_reserva);
+        const horaInicio = reserva.hora_inicio ? reserva.hora_inicio.substring(0, 5) : 'N/A';
+        const horaFim = reserva.hora_fim ? reserva.hora_fim.substring(0, 5) : 'N/A';
+        
+        // Montar lista de recursos
+        let recursos = [];
+        if (reserva.laboratorios) {
+            recursos.push(`Laboratório: ${reserva.laboratorios.nome}`);
+        }
+        if (reserva.reserva_equipamentos && reserva.reserva_equipamentos.length > 0) {
+            const equipamentos = reserva.reserva_equipamentos.map(re => re.equipamentos.nome).join(', ');
+            recursos.push(`Equipamentos: ${equipamentos}`);
+        }
+        
+        resultadoDiv.innerHTML = `
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Protocolo: ${reserva.protocolo}</h6>
+                    <span class="badge ${status.classe}">${status.texto}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Solicitante:</strong><br>
+                            ${reserva.nome_completo}<br>
+                            <small class="text-muted">${reserva.email}</small>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Data/Horário:</strong><br>
+                            ${dataFormatada}<br>
+                            <small class="text-muted">${horaInicio} às ${horaFim}</small>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <strong>Recursos:</strong><br>
+                        ${recursos.join('<br>')}
+                    </div>
+                    <div class="mt-3">
+                        <strong>Finalidade:</strong><br>
+                        ${reserva.finalidade}
+                    </div>
+                    ${reserva.motivo_rejeicao ? `
+                        <div class="mt-3">
+                            <strong>Motivo da Rejeição:</strong><br>
+                            <span class="text-danger">${reserva.motivo_rejeicao}</span>
+                        </div>
+                    ` : ''}
+                    
+                    ${reserva.status === 'aprovada' ? `
+                        <div class="mt-3 alert alert-success">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="flex-grow-1">
+                                    <strong><i class="bi bi-file-earmark-text"></i> Solicitação de Acesso:</strong><br>
+                                    <small class="text-muted">Obrigatório preencher e entregar à portaria do Prédio</small>
+                                </div>
+                                <div>
+                                    <a href="docs/Aut.Acesso.docx" class="btn btn-success btn-sm" download>
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <strong><i class="bi bi-calendar-plus"></i> Adicionar ao Calendário:</strong><br>
+                                    <small class="text-muted">Adicione esta reserva à sua agenda pessoal (Google Calendar, Outlook, etc.)</small>
+                                </div>
+                                <div>
+                                    <button class="btn btn-outline-info btn-sm" onclick="downloadICS('${reserva.protocolo}')">
+                                        <i class="bi bi-calendar-plus"></i> Download .ics
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
 }
 
 /**
@@ -280,15 +410,38 @@ function formatarData(data) {
     }
 }
 
+/**
+ * Download de arquivo iCal (.ics) para reserva aprovada
+ */
+function downloadICS(protocolo) {
+    console.log('🔍 [BuscaGlobal] Download ICS solicitado para protocolo:', protocolo);
+    
+    try {
+        // Verificar se ICalendarUtils está disponível (do arquivo icalendar.js)
+        if (typeof ICalendarUtils !== 'undefined' && typeof ICalendarUtils.downloadICS === 'function') {
+            ICalendarUtils.downloadICS(protocolo);
+        } else {
+            // Fallback simples se ICalendarUtils não estiver disponível
+            console.warn('🔍 [BuscaGlobal] ICalendarUtils não disponível, usando fallback');
+            alert('Funcionalidade de download de calendário temporariamente indisponível. Tente novamente em alguns instantes.');
+        }
+    } catch (error) {
+        console.error('🔍 [BuscaGlobal] Erro ao gerar arquivo iCal:', error);
+        alert('Erro ao gerar arquivo de calendário. Tente novamente.');
+    }
+}
+
 // EXPORTAR FUNÇÕES GLOBALMENTE - IMEDIATAMENTE
 window.abrirBuscaReserva = abrirBuscaReserva;
 window.buscarReserva = buscarReserva;
 window.mostrarResultadoBusca = mostrarResultadoBusca;
+window.downloadICS = downloadICS;
 
 console.log('🔍 [BuscaGlobal] Funções exportadas globalmente:', {
     abrirBuscaReserva: typeof window.abrirBuscaReserva,
     buscarReserva: typeof window.buscarReserva,
-    mostrarResultadoBusca: typeof window.mostrarResultadoBusca
+    mostrarResultadoBusca: typeof window.mostrarResultadoBusca,
+    downloadICS: typeof window.downloadICS
 });
 
 console.log('🔍 [BuscaGlobal] Módulo carregado completamente');

@@ -550,7 +550,9 @@ const API = {
      */
     async buscarReservaPorProtocolo(protocolo) {
         try {
-            console.log('🔍 API: Buscando protocolo:', protocolo);
+            // Limpar protocolo de espaços e caracteres especiais
+            const protocoloLimpo = protocolo.toString().trim();
+            console.log('🔍 API: Buscando protocolo:', protocoloLimpo, '(original:', protocolo, ')');
             
             const { data, error } = await supabase
                 .from('reservas')
@@ -561,7 +563,7 @@ const API = {
                         equipamentos (nome)
                     )
                 `)
-                .eq('protocolo', protocolo)
+                .eq('protocolo', protocoloLimpo)
                 .order('data_reserva', { ascending: true })
                 .order('hora_inicio', { ascending: true });
 
@@ -573,8 +575,34 @@ const API = {
             }
             
             if (!data || data.length === 0) {
-                console.log('🔍 API: Nenhum dado encontrado para protocolo:', protocolo);
-                return { sucesso: false, erro: 'Reserva não encontrada' };
+                console.log('🔍 API: Nenhum dado encontrado para protocolo:', protocoloLimpo);
+                
+                // Fazer busca alternativa mais permissiva
+                console.log('🔍 API: Tentando busca alternativa...');
+                const { data: dataAlternativa, error: errorAlternativo } = await supabase
+                    .from('reservas')
+                    .select(`
+                        *,
+                        laboratorios (nome),
+                        reserva_equipamentos (
+                            equipamentos (nome)
+                        )
+                    `)
+                    .ilike('protocolo', `%${protocoloLimpo}%`)
+                    .order('data_reserva', { ascending: true })
+                    .order('hora_inicio', { ascending: true });
+                
+                if (errorAlternativo) {
+                    console.error('🔍 API: Erro na busca alternativa:', errorAlternativo);
+                    return { sucesso: false, erro: 'Reserva não encontrada' };
+                }
+                
+                if (!dataAlternativa || dataAlternativa.length === 0) {
+                    return { sucesso: false, erro: 'Reserva não encontrada' };
+                }
+                
+                console.log('🔍 API: Encontrado via busca alternativa:', dataAlternativa);
+                return { sucesso: true, dados: dataAlternativa };
             }
             
             console.log('🔍 API: Reserva(s) encontrada(s):', data);

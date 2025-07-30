@@ -967,7 +967,9 @@ function mostrarResultadoBusca(reservas) {
                                     <small class="text-muted">Adicione esta reserva à sua agenda pessoal (Google Calendar, Outlook, etc.)</small>
                                 </div>
                                 <div>
-                                    ${ICalendarUtils.gerarBotaoDownload(primeiraReserva)}
+                                    <button class="btn btn-outline-info btn-sm" onclick="downloadICS('${primeiraReserva.protocolo}')">
+                                        <i class="bi bi-calendar-plus"></i> Download .ics
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1189,10 +1191,17 @@ function mostrarResultadoBusca(reservas) {
         }
     }
     
+    // Função simples para download ICS
+    function downloadICS(protocolo) {
+        console.log('Download ICS solicitado para protocolo:', protocolo);
+        alert('Funcionalidade de download de calendário em desenvolvimento');
+    }
+    
     // Atribuir às variáveis globais IMEDIATAMENTE
     window.abrirBuscaReserva = abrirBuscaReservaGlobal;
     window.buscarReserva = buscarReservaGlobal;
     window.verificarAcompanhamento = verificarAcompanhamentoGlobal;
+    window.downloadICS = downloadICS;
     
     console.log('Funções globais definidas imediatamente');
 })();
