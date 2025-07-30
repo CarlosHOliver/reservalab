@@ -67,6 +67,12 @@
             margin: 0.25rem !important;
         }
         
+        /* Botões de visualização compactos */
+        .btn-sm {
+            font-size: 0.875rem !important;
+            padding: 0.25rem 0.5rem !important;
+        }
+        
         /* Espaçamento nas estatísticas */
         .row.text-center .col-md-3 {
             margin-bottom: 1rem !important;
@@ -234,22 +240,83 @@
                 <div class="card shadow-sm">
                     <div class="card-header bg-light">
                         <div class="row align-items-center">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <h5 class="mb-0 fw-bold">
                                     <i class="bi bi-calendar3 me-2"></i> Calendário de Reservas
                                 </h5>
                             </div>
-                            <div class="col-md-6 text-end">
-                                <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="alterarVisualizacaoCalendario('dayGridMonth')">
-                                        <i class="bi bi-calendar-month me-1"></i> Mês
-                                    </button>
-                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="alterarVisualizacaoCalendario('timeGridWeek')">
-                                        <i class="bi bi-calendar-week me-1"></i> Semana
-                                    </button>
-                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="alterarVisualizacaoCalendario('timeGridDay')">
-                                        <i class="bi bi-calendar-day me-1"></i> Dia
-                                    </button>
+                            <div class="col-md-8">
+                                <div class="row g-2">
+                                    <!-- Filtro por Bloco -->
+                                    <div class="col-md-2">
+                                        <select class="form-select form-select-sm" id="filtro-bloco" onchange="aplicarFiltros()">
+                                            <option value="todos">Todos os Blocos</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Filtro por Tipo de Recurso -->
+                                    <div class="col-md-2">
+                                        <select class="form-select form-select-sm" id="filtro-tipo" onchange="aplicarFiltros()">
+                                            <option value="todos">Todos os Recursos</option>
+                                            <option value="laboratorio">Laboratórios</option>
+                                            <option value="equipamento">Equipamentos</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Filtro por Status -->
+                                    <div class="col-md-2">
+                                        <select class="form-select form-select-sm" id="filtro-status" onchange="aplicarFiltros()">
+                                            <option value="todos">Todos os Status</option>
+                                            <option value="pendente">Pendentes</option>
+                                            <option value="aprovada">Aprovadas</option>
+                                            <option value="rejeitada">Rejeitadas</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Controles de Visualização -->
+                                    <div class="col-md-4">
+                                        <div class="d-flex gap-1">
+                                            <select class="form-select form-select-sm flex-fill" id="filtro-visualizacao" onchange="aplicarFiltros()">
+                                                <option value="semana">📅 Semana</option>
+                                                <option value="mes">📅 Mês</option>
+                                                <option value="dia">📅 Dia</option>
+                                            </select>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-limpar-filtros" onclick="limparFiltros()" title="Limpar Filtros">
+                                                <i class="bi bi-arrow-clockwise"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Container para mostrar filtros aplicados -->
+                                <div class="row mt-2">
+                                    <div class="col-12">
+                                        <div id="filtros-aplicados"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Indicadores de Status -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="d-flex flex-wrap gap-3 align-items-center">
+                                    <small class="text-muted fw-semibold">Legenda:</small>
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-clock me-1"></i> Pendente
+                                    </span>
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i> Aprovada
+                                    </span>
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-x-circle me-1"></i> Rejeitada
+                                    </span>
+                                    <span class="badge bg-primary reserva-em-andamento">
+                                        <i class="bi bi-play-circle me-1"></i> Em Andamento
+                                    </span>
+                                    <small class="text-muted ms-auto" id="contadorFiltrados">
+                                        Total: <strong id="totalReservasVisivel">0</strong> reservas
+                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -302,7 +369,7 @@
                 <div class="card shadow-sm h-100">
                     <div class="card-header bg-info text-white">
                         <h6 class="mb-0 fw-bold">
-                            <i class="bi bi-calendar-plus me-2"></i> Reservas de Amanhã
+                            <i class="bi bi-calendar-plus me-2"></i> Próximas Reservas
                             <span class="badge bg-light text-info ms-2" id="contadorAmanha">0</span>
                         </h6>
                     </div>
