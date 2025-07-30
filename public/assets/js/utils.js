@@ -91,6 +91,15 @@ const Utils = {
     },
 
     /**
+     * Remove o loading de um container.
+     */
+    hideLoading(container) {
+        if (container) {
+            container.innerHTML = '';
+        }
+    },
+
+    /**
      * Adiciona mensagem de erro a um campo do formulário.
      */
     adicionarErro(campoId, mensagem) {

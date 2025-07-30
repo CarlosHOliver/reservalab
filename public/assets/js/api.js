@@ -342,9 +342,9 @@ const API = {
     /**
      * Buscar reservas para calendário
      */
-    async buscarReservasCalendario(dataInicio, dataFim, status = 'aprovada') {
+    async buscarReservasCalendario(dataInicio, dataFim, status = null) {
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('reservas')
                 .select(`
                     *,
@@ -355,9 +355,15 @@ const API = {
                 `)
                 .gte('data_reserva', dataInicio)
                 .lte('data_reserva', dataFim)
-                .eq('status', status)
                 .order('data_reserva')
                 .order('hora_inicio');
+
+            // Adicionar filtro de status apenas se especificado
+            if (status && status !== '') {
+                query = query.eq('status', status);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
             return { sucesso: true, dados: data };

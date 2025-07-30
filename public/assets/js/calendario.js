@@ -15,8 +15,45 @@ let filtrosAtivos = {
 
 // Inicialização quando o DOM estiver carregado
 document.addEventListener('DOMContentLoaded', function() {
-    inicializarCalendario();
-    carregarFiltros();
+    console.log('📅 DOM carregado, verificando dependências...');
+    
+    // Verificar se as dependências estão carregadas
+    if (typeof FullCalendar === 'undefined') {
+        console.error('📅 FullCalendar não carregado!');
+        alert('Erro: FullCalendar não carregado');
+        return;
+    }
+    
+    if (typeof SISTEMA_CONFIG === 'undefined') {
+        console.error('📅 SISTEMA_CONFIG não carregado!');
+        alert('Erro: Configurações não carregadas');
+        return;
+    }
+    
+    if (typeof API === 'undefined') {
+        console.error('📅 API não carregada!');
+        alert('Erro: API não carregada');
+        return;
+    }
+    
+    if (typeof Utils === 'undefined') {
+        console.error('📅 Utils não carregado!');
+        alert('Erro: Utilitários não carregados');
+        return;
+    }
+    
+    console.log('📅 Todas as dependências carregadas, iniciando calendário...');
+    
+    // Pequeno delay para garantir que tudo esteja renderizado
+    setTimeout(() => {
+        try {
+            inicializarCalendario();
+            carregarFiltros();
+        } catch (error) {
+            console.error('📅 Erro na inicialização:', error);
+            Utils.showToast('Erro ao inicializar calendário', 'danger');
+        }
+    }, 100);
 });
 
 /**
@@ -24,6 +61,13 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function inicializarCalendario() {
     const calendarEl = document.getElementById('calendario');
+    
+    if (!calendarEl) {
+        console.error('📅 Elemento #calendario não encontrado!');
+        return;
+    }
+    
+    console.log('📅 Inicializando calendário...');
     
     calendario = new FullCalendar.Calendar(calendarEl, {
         // Configurações básicas
@@ -34,9 +78,9 @@ function inicializarCalendario() {
         
         // Cabeçalho
         headerToolbar: {
-            left: 'prev,next today',
+            left: 'prev,next',
             center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            right: ''
         },
         
         // Botões customizados
@@ -81,6 +125,10 @@ function inicializarCalendario() {
         },
         
         datesSet: function(info) {
+            console.log('📅 Data range changed:', {
+                start: info.start,
+                end: info.end
+            });
             carregarEventos(info.start, info.end);
         },
         
@@ -104,15 +152,27 @@ function inicializarCalendario() {
         
         // Configurações de loading
         loading: function(isLoading) {
+            const container = document.getElementById('calendario');
             if (isLoading) {
-                Utils.showLoading('calendario', 'Carregando eventos...');
+                Utils.showLoading(container, 'Carregando eventos...');
             } else {
-                Utils.hideLoading('calendario');
+                Utils.hideLoading(container);
             }
         }
     });
     
+    console.log('📅 Renderizando calendário...');
     calendario.render();
+    console.log('📅 Calendário inicializado com sucesso!');
+    
+    // Teste adicional para verificar se o calendário foi criado corretamente
+    setTimeout(() => {
+        if (calendario && typeof calendario.today === 'function') {
+            console.log('📅 Função today disponível');
+        } else {
+            console.error('📅 Função today não disponível');
+        }
+    }, 500);
 }
 
 /**
@@ -120,20 +180,27 @@ function inicializarCalendario() {
  */
 async function carregarFiltros() {
     try {
+        console.log('📋 Carregando filtros...');
+        
         // Carregar blocos para filtro
         const resultadoBlocos = await API.buscarBlocos();
+        console.log('📋 Resultado blocos:', resultadoBlocos);
         
-        if (resultadoBlocos.sucesso) {
+        if (resultadoBlocos.sucesso && resultadoBlocos.dados) {
             const filtroBloco = document.getElementById('filtroBloco');
             
             resultadoBlocos.dados.forEach(bloco => {
                 const option = new Option(bloco.nome, bloco.id);
                 filtroBloco.add(option);
             });
+            
+            console.log('📋 Filtros carregados com sucesso');
+        } else {
+            console.warn('📋 Nenhum bloco encontrado ou erro na resposta');
         }
         
     } catch (error) {
-        console.error('Erro ao carregar filtros:', error);
+        console.error('📋 Erro ao carregar filtros:', error);
         Utils.showToast('Erro ao carregar filtros', 'warning');
     }
 }
@@ -146,11 +213,19 @@ async function carregarEventos(dataInicio, dataFim) {
         const dataInicioFormatada = dataInicio.toISOString().split('T')[0];
         const dataFimFormatada = dataFim.toISOString().split('T')[0];
         
+        console.log('📅 Carregando eventos:', {
+            dataInicio: dataInicioFormatada,
+            dataFim: dataFimFormatada,
+            filtros: filtrosAtivos
+        });
+        
         const resultado = await API.buscarReservasCalendario(
             dataInicioFormatada,
             dataFimFormatada,
-            filtrosAtivos.status || undefined
+            filtrosAtivos.status || null
         );
+        
+        console.log('📅 Resultado API:', resultado);
         
         if (!resultado.sucesso) {
             throw new Error(resultado.erro);
@@ -161,10 +236,12 @@ async function carregarEventos(dataInicio, dataFim) {
         
         // Processar e adicionar eventos
         const eventos = processarReservasParaEventos(resultado.dados);
+        console.log('📅 Eventos processados:', eventos.length);
+        
         calendario.addEventSource(eventos);
         
     } catch (error) {
-        console.error('Erro ao carregar eventos:', error);
+        console.error('📅 Erro ao carregar eventos:', error);
         Utils.showToast('Erro ao carregar reservas do calendário', 'danger');
     }
 }
@@ -175,62 +252,81 @@ async function carregarEventos(dataInicio, dataFim) {
 function processarReservasParaEventos(reservas) {
     const eventos = [];
     
-    reservas.forEach(reserva => {
-        // Aplicar filtros
-        if (!passaNosFiltros(reserva)) {
-            return;
-        }
-        
-        // Determinar título do evento
-        let titulo = '';
-        let recursos = [];
-        
-        if (reserva.laboratorios) {
-            recursos.push(reserva.laboratorios.nome);
-        }
-        
-        if (reserva.reserva_equipamentos && reserva.reserva_equipamentos.length > 0) {
-            const equipamentos = reserva.reserva_equipamentos.map(re => re.equipamentos.nome);
-            recursos.push(...equipamentos);
-        }
-        
-        titulo = recursos.join(', ');
-        if (titulo.length > 30) {
-            titulo = titulo.substring(0, 27) + '...';
-        }
-        
-        // Determinar cor baseada no status
-        let cor = getCorPorStatus(reserva.status);
-        
-        // Verificar se está em andamento
-        if (ReservaUtils.isReservaEmAndamento(
-            reserva.data_reserva,
-            reserva.hora_inicio,
-            reserva.hora_fim
-        )) {
-            cor = '#FF6600'; // Laranja UFGD para em andamento
-        }
-        
-        // Criar evento
-        const evento = {
-            id: reserva.id,
-            title: titulo,
-            start: `${reserva.data_reserva}T${reserva.hora_inicio}`,
-            end: `${reserva.data_reserva}T${reserva.hora_fim}`,
-            backgroundColor: cor,
-            borderColor: cor,
-            textColor: '#FFFFFF',
-            extendedProps: {
-                reserva: reserva,
-                status: reserva.status,
-                solicitante: reserva.nome_completo,
-                recursos: recursos
+    if (!reservas || !Array.isArray(reservas)) {
+        console.warn('📅 Nenhuma reserva para processar');
+        return eventos;
+    }
+    
+    console.log('📅 Processando', reservas.length, 'reservas');
+    
+    reservas.forEach((reserva, index) => {
+        try {
+            // Aplicar filtros
+            if (!passaNosFiltros(reserva)) {
+                return;
             }
-        };
-        
-        eventos.push(evento);
+            
+            // Determinar título do evento
+            let titulo = '';
+            let recursos = [];
+            
+            if (reserva.laboratorios) {
+                recursos.push(reserva.laboratorios.nome);
+            }
+            
+            if (reserva.reserva_equipamentos && reserva.reserva_equipamentos.length > 0) {
+                const equipamentos = reserva.reserva_equipamentos.map(re => re.equipamentos?.nome || 'Equipamento').filter(Boolean);
+                recursos.push(...equipamentos);
+            }
+            
+            titulo = recursos.join(', ');
+            if (titulo.length > 30) {
+                titulo = titulo.substring(0, 27) + '...';
+            }
+            
+            if (!titulo) {
+                titulo = `Reserva ${reserva.protocolo || reserva.id}`;
+            }
+            
+            // Determinar cor baseada no status
+            let cor = getCorPorStatus(reserva.status);
+            
+            // Verificar se está em andamento
+            if (ReservaUtils && typeof ReservaUtils.isReservaEmAndamento === 'function') {
+                if (ReservaUtils.isReservaEmAndamento(
+                    reserva.data_reserva,
+                    reserva.hora_inicio,
+                    reserva.hora_fim
+                )) {
+                    cor = '#0d6efd'; // Primary (azul) para em andamento
+                }
+            }
+            
+            // Criar evento
+            const evento = {
+                id: reserva.id,
+                title: titulo,
+                start: `${reserva.data_reserva}T${reserva.hora_inicio}`,
+                end: `${reserva.data_reserva}T${reserva.hora_fim}`,
+                backgroundColor: cor,
+                borderColor: cor,
+                textColor: '#FFFFFF',
+                extendedProps: {
+                    reserva: reserva,
+                    status: reserva.status,
+                    solicitante: reserva.nome_completo,
+                    recursos: recursos
+                }
+            };
+            
+            eventos.push(evento);
+            
+        } catch (error) {
+            console.error(`📅 Erro ao processar reserva ${index}:`, error, reserva);
+        }
     });
     
+    console.log('📅 Eventos criados:', eventos.length);
     return eventos;
 }
 
@@ -280,12 +376,12 @@ function passaNosFiltros(reserva) {
  */
 function getCorPorStatus(status) {
     const cores = {
-        'pendente': '#FF6600', // Laranja UFGD
-        'aprovada': '#009933', // Verde UFGD
-        'rejeitada': '#dc3545'  // Vermelho Bootstrap
+        'pendente': '#ffc107',   // Warning (amarelo)
+        'aprovada': '#198754',   // Success (verde)
+        'rejeitada': '#dc3545'   // Danger (vermelho)
     };
     
-    return cores[status] || '#6c757d';
+    return cores[status] || '#6c757d'; // Secondary (cinza) como padrão
 }
 
 /**
@@ -308,112 +404,186 @@ function aplicarFiltros() {
  * Mostrar detalhes da reserva
  */
 function mostrarDetalhesReserva(reserva) {
-    const modal = new bootstrap.Modal(document.getElementById('modalDetalhesReserva'));
-    const content = document.getElementById('detalhesReservaContent');
-    
-    // Montar lista de recursos
-    let recursos = [];
-    if (reserva.laboratorios) {
-        recursos.push(`<strong>Laboratório:</strong> ${reserva.laboratorios.nome}`);
-    }
-    if (reserva.reserva_equipamentos && reserva.reserva_equipamentos.length > 0) {
-        const equipamentos = reserva.reserva_equipamentos.map(re => re.equipamentos.nome).join(', ');
-        recursos.push(`<strong>Equipamentos:</strong> ${equipamentos}`);
-    }
-    
-    // Determinar status
-    const statusInfo = ReservaUtils.formatarStatus(reserva.status);
-    
-    // Verificar se está em andamento
-    const emAndamento = ReservaUtils.isReservaEmAndamento(
-        reserva.data_reserva,
-        reserva.hora_inicio,
-        reserva.hora_fim
-    );
-    
-    content.innerHTML = `
-        <div class="row">
-            <div class="col-md-6">
-                <h6 class="text-primary">Informações da Reserva</h6>
-                <p><strong>Protocolo:</strong> ${reserva.protocolo}</p>
-                <p><strong>Data:</strong> ${DateUtils.formatarData(reserva.data_reserva)}</p>
-                <p><strong>Horário:</strong> ${DateUtils.formatarHora(reserva.hora_inicio)} às ${DateUtils.formatarHora(reserva.hora_fim)}</p>
-                <p><strong>Status:</strong> 
-                    <span class="badge ${statusInfo.classe}">${statusInfo.texto}</span>
-                    ${emAndamento ? '<span class="badge bg-warning ms-1">EM ANDAMENTO</span>' : ''}
-                </p>
-            </div>
-            <div class="col-md-6">
-                <h6 class="text-primary">Solicitante</h6>
-                <p><strong>Nome:</strong> ${reserva.nome_completo}</p>
-                <p><strong>SIAPE/RGA:</strong> ${reserva.siape_rga}</p>
-                <p><strong>E-mail:</strong> ${reserva.email}</p>
-                ${reserva.telefone ? `<p><strong>Telefone:</strong> ${reserva.telefone}</p>` : ''}
-            </div>
-        </div>
+    try {
+        const modal = new bootstrap.Modal(document.getElementById('modalDetalhesReserva'));
+        const content = document.getElementById('detalhesReservaContent');
         
-        <div class="row mt-3">
-            <div class="col-12">
-                <h6 class="text-primary">Recursos Reservados</h6>
-                ${recursos.join('<br>')}
-            </div>
-        </div>
+        if (!reserva) {
+            console.error('📅 Dados da reserva não disponíveis');
+            Utils.showToast('Erro: dados da reserva não disponíveis', 'danger');
+            return;
+        }
         
-        <div class="row mt-3">
-            <div class="col-12">
-                <h6 class="text-primary">Finalidade</h6>
-                <p>${reserva.finalidade}</p>
-            </div>
-        </div>
+        // Montar lista de recursos
+        let recursos = [];
+        if (reserva.laboratorios) {
+            recursos.push(`<strong>Laboratório:</strong> ${reserva.laboratorios.nome}`);
+        }
+        if (reserva.reserva_equipamentos && reserva.reserva_equipamentos.length > 0) {
+            const equipamentos = reserva.reserva_equipamentos
+                .map(re => re.equipamentos?.nome || 'Equipamento')
+                .filter(Boolean)
+                .join(', ');
+            if (equipamentos) {
+                recursos.push(`<strong>Equipamentos:</strong> ${equipamentos}`);
+            }
+        }
         
-        ${reserva.professor_acompanhante ? `
-            <div class="row mt-3">
-                <div class="col-12">
-                    <h6 class="text-primary">Professor/Técnico Responsável</h6>
-                    <p>${reserva.professor_acompanhante}</p>
+        // Determinar status
+        const statusInfo = ReservaUtils && typeof ReservaUtils.formatarStatus === 'function' 
+            ? ReservaUtils.formatarStatus(reserva.status)
+            : { texto: reserva.status || 'Desconhecido', classe: 'bg-secondary' };
+        
+        // Verificar se está em andamento
+        const emAndamento = ReservaUtils && typeof ReservaUtils.isReservaEmAndamento === 'function'
+            ? ReservaUtils.isReservaEmAndamento(
+                reserva.data_reserva,
+                reserva.hora_inicio,
+                reserva.hora_fim
+            )
+            : false;
+        
+        // Formatar datas
+        const dataFormatada = DateUtils && typeof DateUtils.formatarData === 'function'
+            ? DateUtils.formatarData(reserva.data_reserva)
+            : reserva.data_reserva;
+            
+        const horaInicioFormatada = DateUtils && typeof DateUtils.formatarHora === 'function'
+            ? DateUtils.formatarHora(reserva.hora_inicio)
+            : reserva.hora_inicio;
+            
+        const horaFimFormatada = DateUtils && typeof DateUtils.formatarHora === 'function'
+            ? DateUtils.formatarHora(reserva.hora_fim)
+            : reserva.hora_fim;
+            
+        const criadoEm = DateUtils && typeof DateUtils.formatarDataHora === 'function'
+            ? DateUtils.formatarDataHora(reserva.created_at)
+            : reserva.created_at;
+        
+        content.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary">Informações da Reserva</h6>
+                    <p><strong>Protocolo:</strong> ${reserva.protocolo || 'N/A'}</p>
+                    <p><strong>Data:</strong> ${dataFormatada}</p>
+                    <p><strong>Horário:</strong> ${horaInicioFormatada} às ${horaFimFormatada}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge ${statusInfo.classe}">${statusInfo.texto}</span>
+                        ${emAndamento ? '<span class="badge bg-warning ms-1">EM ANDAMENTO</span>' : ''}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-primary">Solicitante</h6>
+                    <p><strong>Nome:</strong> ${reserva.nome_completo || 'N/A'}</p>
+                    <p><strong>SIAPE/RGA:</strong> ${reserva.siape_rga || 'N/A'}</p>
+                    <p><strong>E-mail:</strong> ${reserva.email || 'N/A'}</p>
+                    ${reserva.telefone ? `<p><strong>Telefone:</strong> ${reserva.telefone}</p>` : ''}
                 </div>
             </div>
-        ` : ''}
-        
-        ${reserva.motivo_rejeicao ? `
+            
+            ${recursos.length > 0 ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 class="text-primary">Recursos Reservados</h6>
+                        ${recursos.join('<br>')}
+                    </div>
+                </div>
+            ` : ''}
+            
             <div class="row mt-3">
                 <div class="col-12">
-                    <h6 class="text-danger">Motivo da Rejeição</h6>
-                    <p class="text-danger">${reserva.motivo_rejeicao}</p>
+                    <h6 class="text-primary">Finalidade</h6>
+                    <p>${reserva.finalidade || 'Não informado'}</p>
                 </div>
             </div>
-        ` : ''}
+            
+            ${reserva.professor_acompanhante ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 class="text-primary">Professor/Técnico Responsável</h6>
+                        <p>${reserva.professor_acompanhante}</p>
+                    </div>
+                </div>
+            ` : ''}
+            
+            ${reserva.motivo_rejeicao ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 class="text-danger">Motivo da Rejeição</h6>
+                        <p class="text-danger">${reserva.motivo_rejeicao}</p>
+                    </div>
+                </div>
+            ` : ''}
+            
+            ${reserva.created_at ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <small class="text-muted">
+                            Solicitação feita em: ${criadoEm}
+                        </small>
+                    </div>
+                </div>
+            ` : ''}
+        `;
         
-        <div class="row mt-3">
-            <div class="col-12">
-                <small class="text-muted">
-                    Solicitação feita em: ${DateUtils.formatarDataHora(reserva.created_at)}
-                </small>
-            </div>
-        </div>
-    `;
-    
-    modal.show();
+        modal.show();
+        
+    } catch (error) {
+        console.error('📅 Erro ao mostrar detalhes da reserva:', error);
+        Utils.showToast('Erro ao exibir detalhes da reserva', 'danger');
+    }
 }
 
 /**
  * Navegar para hoje
  */
 function irParaHoje() {
-    calendario.today();
+    console.log('📅 Tentando navegar para hoje...');
+    if (calendario && typeof calendario.today === 'function') {
+        try {
+            calendario.today();
+            console.log('📅 Navegado para hoje com sucesso');
+            Utils.showToast('Navegado para hoje', 'success');
+        } catch (error) {
+            console.error('📅 Erro ao navegar para hoje:', error);
+            Utils.showToast('Erro ao navegar para hoje', 'danger');
+        }
+    } else {
+        console.error('📅 Calendário não inicializado ou método today não disponível');
+        Utils.showToast('Erro: calendário não inicializado', 'danger');
+    }
 }
 
 /**
  * Atualizar calendário
  */
 function atualizarCalendario() {
-    const view = calendario.view;
-    carregarEventos(view.activeStart, view.activeEnd);
-    Utils.showToast('Calendário atualizado', 'success');
+    if (calendario) {
+        const view = calendario.view;
+        carregarEventos(view.activeStart, view.activeEnd);
+        Utils.showToast('Calendário atualizado', 'success');
+    } else {
+        console.error('📅 Calendário não inicializado');
+        Utils.showToast('Erro: calendário não inicializado', 'danger');
+    }
+}
+
+/**
+ * Mudar visualização do calendário
+ */
+function mudarVisao(visao) {
+    if (calendario) {
+        calendario.changeView(visao);
+        Utils.showToast(`Visualização alterada para ${visao === 'dayGridMonth' ? 'Mês' : visao === 'timeGridWeek' ? 'Semana' : 'Dia'}`, 'info');
+    } else {
+        console.error('📅 Calendário não inicializado');
+        Utils.showToast('Erro: calendário não inicializado', 'danger');
+    }
 }
 
 // Exportar funções para uso global
 window.aplicarFiltros = aplicarFiltros;
 window.irParaHoje = irParaHoje;
 window.atualizarCalendario = atualizarCalendario;
+window.mudarVisao = mudarVisao;
 
