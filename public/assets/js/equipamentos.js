@@ -21,8 +21,22 @@ let estadoEquipamentos = {
 
 // Inicialização quando o DOM estiver carregado
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM carregado, iniciando página de equipamentos...');
     inicializarPagina();
 });
+
+// Função de teste para debug (pode ser chamada no console)
+window.testarEquipamentos = async function() {
+    console.log('Testando busca de equipamentos...');
+    try {
+        const resultado = await API.buscarEquipamentos();
+        console.log('Resultado da API:', resultado);
+        return resultado;
+    } catch (error) {
+        console.error('Erro no teste:', error);
+        return error;
+    }
+};
 
 /**
  * Inicializar página de equipamentos
@@ -51,26 +65,13 @@ async function inicializarPagina() {
  * Configurar visualização inicial
  */
 function configurarVisualizacaoInicial() {
-    // Garantir que apenas a visualização cards esteja visível inicialmente
-    const viewCards = document.getElementById('viewCards');
-    const viewLista = document.getElementById('viewLista');
+    // Garantir que apenas a visualização tabela esteja visível
     const viewTabela = document.getElementById('viewTabela');
     
-    if (viewCards) viewCards.style.display = 'block';
-    if (viewLista) viewLista.style.display = 'none';
-    if (viewTabela) viewTabela.style.display = 'none';
+    if (viewTabela) viewTabela.style.display = 'block';
     
-    // Garantir que o botão cards esteja ativo
-    const btnCards = document.getElementById('btnViewCards');
-    const btnLista = document.getElementById('btnViewLista');
-    const btnTabela = document.getElementById('btnViewTabela');
-    
-    if (btnCards) btnCards.classList.add('active');
-    if (btnLista) btnLista.classList.remove('active');
-    if (btnTabela) btnTabela.classList.remove('active');
-    
-    // Forçar estado inicial do visualizador
-    estadoEquipamentos.visualizacaoAtual = 'cards';
+    // Definir estado inicial como tabela
+    estadoEquipamentos.visualizacaoAtual = 'tabela';
 }
 
 /**
@@ -79,19 +80,27 @@ function configurarVisualizacaoInicial() {
 function configurarEventos() {
     // Evento de busca com debounce
     const buscaInput = document.getElementById('buscaEquipamento');
-    buscaInput.addEventListener('input', Utils.debounce(buscarEquipamentos, 300));
-    
-    // Evento de Enter na busca
-    buscaInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            buscarEquipamentos();
-        }
-    });
+    if (buscaInput) {
+        buscaInput.addEventListener('input', function() {
+            setTimeout(buscarEquipamentos, 300);
+        });
+        
+        // Evento de Enter na busca
+        buscaInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                buscarEquipamentos();
+            }
+        });
+    }
     
     // Eventos de filtros
-    document.getElementById('filtroBloco').addEventListener('change', aplicarFiltros);
-    document.getElementById('filtroStatus').addEventListener('change', aplicarFiltros);
-    document.getElementById('filtroCompartilhado').addEventListener('change', aplicarFiltros);
+    const filtroBloco = document.getElementById('filtroBloco');
+    const filtroStatus = document.getElementById('filtroStatus');
+    const filtroCompartilhado = document.getElementById('filtroCompartilhado');
+    
+    if (filtroBloco) filtroBloco.addEventListener('change', aplicarFiltros);
+    if (filtroStatus) filtroStatus.addEventListener('change', aplicarFiltros);
+    if (filtroCompartilhado) filtroCompartilhado.addEventListener('change', aplicarFiltros);
 }
 
 /**
@@ -121,9 +130,11 @@ async function carregarFiltros() {
  */
 async function carregarEquipamentos() {
     try {
+        console.log('Iniciando carregamento de equipamentos...');
         mostrarLoading(true);
         
         const resultado = await API.buscarEquipamentos();
+        console.log('Resultado da API:', resultado);
         
         if (!resultado.sucesso) {
             throw new Error(resultado.erro);
@@ -134,6 +145,8 @@ async function carregarEquipamentos() {
             ...equip,
             bloco_nome: equip.blocos?.nome || 'N/A'
         }));
+        
+        console.log('Equipamentos processados:', equipamentos);
         
         estadoEquipamentos.equipamentos = equipamentos;
         estadoEquipamentos.equipamentosFiltrados = [...equipamentos];
@@ -203,35 +216,13 @@ function aplicarTodosFiltros() {
     if (estadoEquipamentos.filtros.compartilhado) {
         const compartilhado = estadoEquipamentos.filtros.compartilhado === 'true';
         equipamentosFiltrados = equipamentosFiltrados.filter(eq => 
-            eq.uso_compartilhado === compartilhado
+            eq.permitir_uso_compartilhado === compartilhado
         );
     }
     
     estadoEquipamentos.equipamentosFiltrados = equipamentosFiltrados;
     atualizarVisualizacao();
     atualizarContador();
-}
-
-/**
- * Alterar tipo de visualização
- */
-function alterarVisualizacao(tipo) {
-    // Atualizar botões
-    document.querySelectorAll('[id^="btnView"]').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.getElementById(`btnView${Utils.capitalize(tipo)}`).classList.add('active');
-    
-    // Esconder todas as visualizações
-    document.getElementById('viewCards').style.display = 'none';
-    document.getElementById('viewLista').style.display = 'none';
-    document.getElementById('viewTabela').style.display = 'none';
-    
-    // Mostrar visualização selecionada
-    document.getElementById(`view${Utils.capitalize(tipo)}`).style.display = 'block';
-    
-    estadoEquipamentos.visualizacaoAtual = tipo;
-    atualizarVisualizacao();
 }
 
 /**
@@ -247,17 +238,8 @@ function atualizarVisualizacao() {
     
     esconderSemEquipamentos();
     
-    switch (estadoEquipamentos.visualizacaoAtual) {
-        case 'cards':
-            renderizarCards(equipamentos);
-            break;
-        case 'lista':
-            renderizarLista(equipamentos);
-            break;
-        case 'tabela':
-            renderizarTabela(equipamentos);
-            break;
-    }
+    // Renderizar apenas tabela
+    renderizarTabela(equipamentos);
 }
 
 /**
@@ -269,14 +251,14 @@ function renderizarCards(equipamentos) {
     let html = '';
     equipamentos.forEach(equipamento => {
         const statusBadge = getStatusBadge(equipamento.status);
-        const compartilhadoBadge = equipamento.uso_compartilhado ? 
+        const compartilhadoBadge = equipamento.permitir_uso_compartilhado ? 
             '<span class="badge bg-info">Compartilhado</span>' : 
             '<span class="badge bg-secondary">Exclusivo</span>';
         const acompanhamentoBadge = equipamento.necessita_acompanhamento ? 
             '<span class="badge bg-warning">Necessita Acompanhamento</span>' : '';
         
         html += `
-            <div class="col-md-6 col-lg-4 mb-4">
+            <div class="col-sm-6 col-md-4 mb-4">
                 <div class="card h-100 shadow-sm">
                     ${equipamento.foto_url ? `
                         <img src="${equipamento.foto_url}" class="card-img-top" alt="${equipamento.nome}" style="height: 200px; object-fit: cover;">
@@ -329,7 +311,7 @@ function renderizarLista(equipamentos) {
     let html = '';
     equipamentos.forEach(equipamento => {
         const statusBadge = getStatusBadge(equipamento.status);
-        const compartilhadoBadge = equipamento.uso_compartilhado ? 
+        const compartilhadoBadge = equipamento.permitir_uso_compartilhado ? 
             '<span class="badge bg-info">Compartilhado</span>' : 
             '<span class="badge bg-secondary">Exclusivo</span>';
         
@@ -380,7 +362,7 @@ function renderizarTabela(equipamentos) {
     let html = '';
     equipamentos.forEach(equipamento => {
         const statusBadge = getStatusBadge(equipamento.status);
-        const compartilhado = equipamento.uso_compartilhado ? 
+        const compartilhado = equipamento.permitir_uso_compartilhado ? 
             '<i class="bi bi-check-circle text-success"></i> Sim' : 
             '<i class="bi bi-x-circle text-danger"></i> Não';
         const acompanhamento = equipamento.necessita_acompanhamento ? 
@@ -398,18 +380,6 @@ function renderizarTabela(equipamentos) {
                 <td>${statusBadge}</td>
                 <td>${compartilhado}</td>
                 <td>${acompanhamento}</td>
-                <td>
-                    <div class="btn-group" role="group">
-                        <button class="btn btn-outline-primary btn-sm" onclick="mostrarDetalhesEquipamento(${equipamento.id})" title="Ver detalhes">
-                            <i class="bi bi-info-circle"></i>
-                        </button>
-                        ${equipamento.status === 'disponivel' ? `
-                            <button class="btn btn-outline-success btn-sm" onclick="reservarEquipamento(${equipamento.id})" title="Reservar">
-                                <i class="bi bi-calendar-plus"></i>
-                            </button>
-                        ` : ''}
-                    </div>
-                </td>
             </tr>
         `;
     });
@@ -466,7 +436,7 @@ function mostrarDetalhesEquipamento(equipamentoId) {
                 <p><strong>Local:</strong> ${equipamento.local}</p>
                 <p><strong>Status:</strong> ${statusBadge}</p>
                 <p><strong>Uso Compartilhado:</strong> 
-                    ${equipamento.uso_compartilhado ? 
+                    ${equipamento.permitir_uso_compartilhado ? 
                         '<i class="bi bi-check-circle text-success"></i> Sim' : 
                         '<i class="bi bi-x-circle text-danger"></i> Não'}
                 </p>
@@ -533,23 +503,16 @@ function reservarEquipamento(equipamentoId = null) {
  */
 function mostrarLoading(mostrar) {
     const loading = document.getElementById('loadingEquipamentos');
+    const viewTabela = document.getElementById('viewTabela');
     
     if (mostrar) {
-        loading.style.display = 'block';
-        esconderVisualizacoes();
+        if (loading) loading.style.display = 'block';
+        if (viewTabela) viewTabela.style.display = 'none';
         esconderSemEquipamentos();
     } else {
-        loading.style.display = 'none';
+        if (loading) loading.style.display = 'none';
+        if (viewTabela) viewTabela.style.display = 'block';
     }
-}
-
-/**
- * Esconder todas as visualizações
- */
-function esconderVisualizacoes() {
-    document.getElementById('viewCards').style.display = 'none';
-    document.getElementById('viewLista').style.display = 'none';
-    document.getElementById('viewTabela').style.display = 'none';
 }
 
 /**

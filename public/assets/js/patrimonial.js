@@ -845,3 +845,10 @@ window.addEventListener('beforeunload', function() {
         clearInterval(intervaloClock);
     }
 });
+
+// Cleanup ao sair da página
+window.addEventListener('beforeunload', function() {
+    if (intervaloClock) {
+        clearInterval(intervaloClock);
+    }
+});

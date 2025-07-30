@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Equipamentos - ReservaLAB FAEN/UFGD</title>
     
-    <!-- Bootstrap CSS -->
+       <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/equipamentos.js"></script>ootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
@@ -28,6 +34,9 @@
                 </div>
                 <div class="col-md-4 text-end">
                     <div class="d-flex gap-2 justify-content-end">
+                        <button class="btn btn-outline-light btn-sm" onclick="abrirBuscaReserva()">
+                            <i class="bi bi-search"></i> Buscar Reserva
+                        </button>
                         <button class="btn btn-outline-light btn-sm" onclick="window.location.href='index.html'">
                             <i class="bi bi-house"></i> Início
                         </button>
@@ -103,17 +112,7 @@
         <!-- Controles de Visualização -->
         <div class="row mb-3">
             <div class="col-md-6">
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-primary active" id="btnViewCards" onclick="alterarVisualizacao('cards')">
-                        <i class="bi bi-grid-3x3-gap"></i> Cards
-                    </button>
-                    <button type="button" class="btn btn-outline-primary" id="btnViewLista" onclick="alterarVisualizacao('lista')">
-                        <i class="bi bi-list-ul"></i> Lista
-                    </button>
-                    <button type="button" class="btn btn-outline-primary" id="btnViewTabela" onclick="alterarVisualizacao('tabela')">
-                        <i class="bi bi-table"></i> Tabela
-                    </button>
-                </div>
+                <!-- Visualização fixa em tabela -->
             </div>
             <div class="col-md-6 text-end">
                 <span class="text-muted" id="totalEquipamentos">Carregando...</span>
@@ -128,22 +127,8 @@
             <p class="mt-2 text-muted">Carregando equipamentos...</p>
         </div>
 
-        <!-- Visualização em Cards -->
-        <div id="viewCards" class="row">
-            <!-- Cards serão inseridos aqui dinamicamente -->
-        </div>
-
-        <!-- Visualização em Lista -->
-        <div id="viewLista" class="row" style="display: none;">
-            <div class="col-12">
-                <div class="list-group" id="listaEquipamentos">
-                    <!-- Lista será inserida aqui dinamicamente -->
-                </div>
-            </div>
-        </div>
-
         <!-- Visualização em Tabela -->
-        <div id="viewTabela" class="row" style="display: none;">
+        <div id="viewTabela" class="row">
             <div class="col-12">
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
@@ -155,7 +140,6 @@
                                 <th>Status</th>
                                 <th>Compartilhado</th>
                                 <th>Acompanhamento</th>
-                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tabelaEquipamentos">
@@ -208,11 +192,11 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/js/umd/supabase.js"></script>
     <script src="assets/js/config.js"></script>
     <script src="assets/js/utils.js"></script>
     <script src="assets/js/api.js"></script>
+    <script src="assets/js/busca.js"></script>
     <script src="assets/js/equipamentos.js"></script>
 </body>
 </html>
-
