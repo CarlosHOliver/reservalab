@@ -771,6 +771,137 @@
         </div>
     </div>
 
+    <!-- Modal Laboratório -->
+    <div class="modal fade" id="modalLaboratorio" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalLaboratorioTitle">
+                        <i class="bi bi-building"></i> Novo Laboratório
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formLaboratorio">
+                        <input type="hidden" id="laboratorioId">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="laboratorioNome" class="form-label">Nome do Laboratório *</label>
+                                    <input type="text" class="form-control" id="laboratorioNome" required 
+                                           placeholder="Ex: Laboratório de Química">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="laboratorioBloco" class="form-label">Bloco *</label>
+                                    <select class="form-control" id="laboratorioBloco" required>
+                                        <option value="">Selecione o bloco</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="laboratorioCapacidade" class="form-label">Capacidade</label>
+                                    <input type="number" class="form-control" id="laboratorioCapacidade" 
+                                           min="1" value="1" placeholder="Número de pessoas">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="laboratorioFoto" class="form-label">URL da Foto</label>
+                                    <input type="url" class="form-control" id="laboratorioFoto" 
+                                           placeholder="https://exemplo.com/foto.jpg">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="laboratorioDescricao" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="laboratorioDescricao" rows="3" 
+                                      placeholder="Descrição do laboratório, equipamentos disponíveis, etc."></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="laboratorioCompartilhado" 
+                                               onchange="document.getElementById('divMaxOcupantes').style.display = this.checked ? 'block' : 'none'">
+                                        <label class="form-check-label" for="laboratorioCompartilhado">
+                                            Permitir uso compartilhado
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="laboratorioAcompanhamento">
+                                        <label class="form-check-label" for="laboratorioAcompanhamento">
+                                            Necessita acompanhamento
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="divMaxOcupantes" style="display: none;">
+                            <label for="laboratorioMaxOcupantes" class="form-label">Máximo de ocupantes simultâneos</label>
+                            <input type="number" class="form-control" id="laboratorioMaxOcupantes" 
+                                   min="1" value="1">
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="laboratorioAtivo" checked>
+                                <label class="form-check-label" for="laboratorioAtivo">
+                                    Laboratório ativo
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="salvarLaboratorio()">
+                        <i class="bi bi-check"></i> Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmação Exclusão -->
+    <div class="modal fade" id="modalConfirmacaoExclusao" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle"></i> Confirmar Exclusão
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="textoConfirmacaoExclusao">Tem certeza que deseja excluir este item?</p>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Atenção:</strong> Esta ação não pode ser desfeita.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmarExclusao">
+                        <i class="bi bi-trash"></i> Confirmar Exclusão
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-light text-center py-3 mt-5">
         <div class="container">

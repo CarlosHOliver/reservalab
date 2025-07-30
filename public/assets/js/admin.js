@@ -74,11 +74,40 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             console.log('✅ DateUtils disponível');
         }
+        
+        // Testar conexão com Supabase
+        testarConexaoSupabase();
     }, 1000);
     
     checkLoginStatus();
     setupEventListeners();
 });
+
+/**
+ * Testar conexão com Supabase
+ */
+async function testarConexaoSupabase() {
+    try {
+        if (typeof supabase === 'undefined') {
+            console.error('❌ Cliente Supabase não inicializado');
+            return;
+        }
+        
+        console.log('🔗 Testando conexão com Supabase...');
+        const { data, error } = await supabase
+            .from('blocos')
+            .select('count(*)')
+            .limit(1);
+            
+        if (error) {
+            console.error('❌ Erro na conexão com Supabase:', error);
+        } else {
+            console.log('✅ Conexão com Supabase funcionando');
+        }
+    } catch (error) {
+        console.error('❌ Erro ao testar conexão:', error);
+    }
+}
 
 /**
  * Configurar event listeners
@@ -92,6 +121,17 @@ function setupEventListeners() {
     
     // Alterar senha form
     document.getElementById('formAlterarSenha').addEventListener('submit', alterarSenha);
+    
+    // Checkbox de laboratório compartilhado
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkboxCompartilhado = document.getElementById('laboratorioCompartilhado');
+        if (checkboxCompartilhado) {
+            checkboxCompartilhado.addEventListener('change', function() {
+                const divMaxOcupantes = document.getElementById('divMaxOcupantes');
+                divMaxOcupantes.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+    });
 }
 
 /**
@@ -728,9 +768,105 @@ function exportarReservas() {
 /**
  * Funções para outras seções (stub)
  */
-function loadLaboratorios() {
-    document.getElementById('tabelaLaboratorios').innerHTML = 
-        '<tr><td colspan="5" class="text-center">Funcionalidade em desenvolvimento</td></tr>';
+async function loadLaboratorios() {
+    try {
+        console.log('🔄 Carregando laboratórios...');
+        
+        // Verificar se supabase está disponível
+        if (typeof supabase === 'undefined') {
+            throw new Error('Cliente Supabase não inicializado');
+        }
+        
+        const { data: laboratorios, error } = await supabase
+            .from('laboratorios')
+            .select(`
+                *,
+                blocos (nome)
+            `)
+            .order('nome');
+
+        if (error) {
+            console.error('❌ Erro ao carregar laboratórios:', error);
+            throw error;
+        }
+
+        console.log('✅ Laboratórios carregados:', laboratorios);
+        
+        const tbody = document.getElementById('tabelaLaboratorios');
+        
+        if (!tbody) {
+            console.error('❌ Elemento tabelaLaboratorios não encontrado');
+            return;
+        }
+        
+        if (!laboratorios || laboratorios.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-muted">
+                        <i class="bi bi-inbox"></i> Nenhum laboratório cadastrado
+                        <br><small>Clique em "Novo Laboratório" para criar o primeiro</small>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = laboratorios.map(lab => `
+            <tr>
+                <td>
+                    <strong>${lab.nome}</strong>
+                    ${lab.descricao ? `<br><small class="text-muted">${lab.descricao.substring(0, 100)}${lab.descricao.length > 100 ? '...' : ''}</small>` : ''}
+                </td>
+                <td>${lab.blocos?.nome || 'Não informado'}</td>
+                <td>
+                    <span class="badge bg-info">${lab.capacidade || 1} pessoas</span>
+                    ${lab.permitir_uso_compartilhado ? 
+                        `<br><small class="text-success"><i class="bi bi-people"></i> Compartilhado (${lab.quantidade_maxima_ocupantes_simultaneos || 1})</small>` : 
+                        `<br><small class="text-warning"><i class="bi bi-person"></i> Individual</small>`
+                    }
+                </td>
+                <td>
+                    <span class="badge ${lab.ativo ? 'bg-success' : 'bg-danger'}">
+                        <i class="bi ${lab.ativo ? 'bi-check-circle' : 'bi-x-circle'}"></i>
+                        ${lab.ativo ? 'Ativo' : 'Inativo'}
+                    </span>
+                    ${lab.necessita_acompanhamento ? 
+                        `<br><small class="text-info"><i class="bi bi-person-check"></i> Acompanhamento</small>` : ''
+                    }
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-primary" onclick="editarLaboratorio(${lab.id})" 
+                                title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-outline-info" onclick="visualizarLaboratorio(${lab.id})" 
+                                title="Visualizar">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="excluirLaboratorio(${lab.id}, '${lab.nome.replace(/'/g, "\\'")}', '${lab.blocos?.nome || 'Sem bloco'}')" 
+                                title="Excluir">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error('❌ Erro ao carregar laboratórios:', error);
+        const tbody = document.getElementById('tabelaLaboratorios');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center text-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Erro ao carregar laboratórios: ${error.message}
+                        <br><small>Verifique a conexão e tente novamente</small>
+                    </td>
+                </tr>
+            `;
+        }
+    }
 }
 
 function loadEquipamentos() {
@@ -1678,7 +1814,310 @@ async function excluirUsuario(id, nome) {
 }
 
 function novoLaboratorio() {
-    alert('Funcionalidade em desenvolvimento');
+    console.log('📝 Abrindo modal para novo laboratório');
+    limparFormularioLaboratorio();
+    document.getElementById('modalLaboratorioTitle').innerHTML = 
+        '<i class="bi bi-building"></i> Novo Laboratório';
+    
+    // Carregar blocos
+    carregarBlocos();
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('modalLaboratorio'));
+    modal.show();
+}
+
+/**
+ * Limpar formulário de laboratório
+ */
+function limparFormularioLaboratorio() {
+    document.getElementById('formLaboratorio').reset();
+    document.getElementById('laboratorioId').value = '';
+    document.getElementById('laboratorioCapacidade').value = '1';
+    document.getElementById('laboratorioMaxOcupantes').value = '1';
+    document.getElementById('laboratorioAtivo').checked = true;
+    document.getElementById('divMaxOcupantes').style.display = 'none';
+}
+
+/**
+ * Carregar blocos para o select
+ */
+async function carregarBlocos() {
+    try {
+        const { data: blocos, error } = await supabase
+            .from('blocos')
+            .select('*')
+            .order('nome');
+
+        if (error) throw error;
+
+        const select = document.getElementById('laboratorioBloco');
+        select.innerHTML = '<option value="">Selecione o bloco</option>';
+        
+        blocos.forEach(bloco => {
+            select.innerHTML += `<option value="${bloco.id}">${bloco.nome}</option>`;
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao carregar blocos:', error);
+        alert('Erro ao carregar blocos: ' + error.message);
+    }
+}
+
+/**
+ * Salvar laboratório
+ */
+async function salvarLaboratorio() {
+    try {
+        const form = document.getElementById('formLaboratorio');
+        const id = document.getElementById('laboratorioId').value;
+        
+        // Validar campos obrigatórios
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const dadosLaboratorio = {
+            nome: document.getElementById('laboratorioNome').value.trim(),
+            bloco_id: parseInt(document.getElementById('laboratorioBloco').value),
+            descricao: document.getElementById('laboratorioDescricao').value.trim() || null,
+            capacidade: parseInt(document.getElementById('laboratorioCapacidade').value) || 1,
+            permitir_uso_compartilhado: document.getElementById('laboratorioCompartilhado').checked,
+            necessita_acompanhamento: document.getElementById('laboratorioAcompanhamento').checked,
+            quantidade_maxima_ocupantes_simultaneos: document.getElementById('laboratorioCompartilhado').checked ? 
+                parseInt(document.getElementById('laboratorioMaxOcupantes').value) || 1 : 1,
+            foto_url: document.getElementById('laboratorioFoto').value.trim() || null,
+            ativo: document.getElementById('laboratorioAtivo').checked,
+            updated_at: new Date().toISOString()
+        };
+
+        let result;
+        if (id) {
+            // Atualizar laboratório existente
+            console.log('🔄 Atualizando laboratório ID:', id);
+            result = await supabase
+                .from('laboratorios')
+                .update(dadosLaboratorio)
+                .eq('id', id);
+        } else {
+            // Criar novo laboratório
+            console.log('✨ Criando novo laboratório');
+            dadosLaboratorio.created_at = new Date().toISOString();
+            result = await supabase
+                .from('laboratorios')
+                .insert([dadosLaboratorio]);
+        }
+
+        if (result.error) throw result.error;
+
+        console.log('✅ Laboratório salvo com sucesso');
+        
+        // Fechar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalLaboratorio'));
+        modal.hide();
+        
+        // Recarregar lista
+        loadLaboratorios();
+        
+        // Mostrar sucesso
+        alert(id ? 'Laboratório atualizado com sucesso!' : 'Laboratório criado com sucesso!');
+
+    } catch (error) {
+        console.error('❌ Erro ao salvar laboratório:', error);
+        alert('Erro ao salvar laboratório: ' + error.message);
+    }
+}
+
+/**
+ * Editar laboratório
+ */
+async function editarLaboratorio(id) {
+    try {
+        console.log('📝 Editando laboratório ID:', id);
+        
+        const { data: laboratorio, error } = await supabase
+            .from('laboratorios')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+
+        // Preencher formulário
+        document.getElementById('laboratorioId').value = laboratorio.id;
+        document.getElementById('laboratorioNome').value = laboratorio.nome;
+        document.getElementById('laboratorioBloco').value = laboratorio.bloco_id;
+        document.getElementById('laboratorioDescricao').value = laboratorio.descricao || '';
+        document.getElementById('laboratorioCapacidade').value = laboratorio.capacidade || 1;
+        document.getElementById('laboratorioCompartilhado').checked = laboratorio.permitir_uso_compartilhado;
+        document.getElementById('laboratorioAcompanhamento').checked = laboratorio.necessita_acompanhamento;
+        document.getElementById('laboratorioMaxOcupantes').value = laboratorio.quantidade_maxima_ocupantes_simultaneos || 1;
+        document.getElementById('laboratorioFoto').value = laboratorio.foto_url || '';
+        document.getElementById('laboratorioAtivo').checked = laboratorio.ativo;
+
+        // Mostrar/ocultar campo de máximo de ocupantes
+        document.getElementById('divMaxOcupantes').style.display = 
+            laboratorio.permitir_uso_compartilhado ? 'block' : 'none';
+
+        // Atualizar título do modal
+        document.getElementById('modalLaboratorioTitle').innerHTML = 
+            '<i class="bi bi-pencil"></i> Editar Laboratório';
+        
+        // Carregar blocos
+        await carregarBlocos();
+        
+        // Selecionar bloco correto
+        document.getElementById('laboratorioBloco').value = laboratorio.bloco_id;
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalLaboratorio'));
+        modal.show();
+
+    } catch (error) {
+        console.error('❌ Erro ao carregar laboratório para edição:', error);
+        alert('Erro ao carregar laboratório: ' + error.message);
+    }
+}
+
+/**
+ * Visualizar laboratório
+ */
+async function visualizarLaboratorio(id) {
+    try {
+        console.log('👁️ Visualizando laboratório ID:', id);
+        
+        const { data: laboratorio, error } = await supabase
+            .from('laboratorios')
+            .select(`
+                *,
+                blocos (nome)
+            `)
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+
+        const modal = new bootstrap.Modal(document.getElementById('modalDetalhesReserva'));
+        document.getElementById('detalhesReservaContent').innerHTML = `
+            <div class="row">
+                <div class="col-md-8">
+                    <h5><i class="bi bi-building"></i> ${laboratorio.nome}</h5>
+                    <p><strong>Bloco:</strong> ${laboratorio.blocos?.nome || 'Não informado'}</p>
+                    <p><strong>Capacidade:</strong> ${laboratorio.capacidade || 1} pessoas</p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge ${laboratorio.ativo ? 'bg-success' : 'bg-danger'}">
+                            ${laboratorio.ativo ? 'Ativo' : 'Inativo'}
+                        </span>
+                    </p>
+                    
+                    <h6>Configurações:</h6>
+                    <ul>
+                        <li><strong>Uso compartilhado:</strong> ${laboratorio.permitir_uso_compartilhado ? 'Sim' : 'Não'}</li>
+                        ${laboratorio.permitir_uso_compartilhado ? 
+                            `<li><strong>Máximo de ocupantes simultâneos:</strong> ${laboratorio.quantidade_maxima_ocupantes_simultaneos || 1}</li>` : ''
+                        }
+                        <li><strong>Necessita acompanhamento:</strong> ${laboratorio.necessita_acompanhamento ? 'Sim' : 'Não'}</li>
+                    </ul>
+                    
+                    ${laboratorio.descricao ? `
+                        <h6>Descrição:</h6>
+                        <p>${laboratorio.descricao}</p>
+                    ` : ''}
+                    
+                    <p><small class="text-muted">
+                        Criado em: ${formatarDataFallback(laboratorio.created_at)}<br>
+                        Atualizado em: ${formatarDataFallback(laboratorio.updated_at)}
+                    </small></p>
+                </div>
+                <div class="col-md-4">
+                    ${laboratorio.foto_url ? `
+                        <img src="${laboratorio.foto_url}" class="img-fluid rounded" alt="Foto do laboratório" 
+                             onerror="this.style.display='none'">
+                    ` : `
+                        <div class="text-center p-4 bg-light rounded">
+                            <i class="bi bi-image" style="font-size: 3rem; color: #ccc;"></i>
+                            <p class="text-muted mt-2">Sem foto</p>
+                        </div>
+                    `}
+                </div>
+            </div>
+        `;
+        
+        // Ocultar botões de ação
+        document.getElementById('btnAprovar').style.display = 'none';
+        document.getElementById('btnRejeitar').style.display = 'none';
+        
+        modal.show();
+
+    } catch (error) {
+        console.error('❌ Erro ao visualizar laboratório:', error);
+        alert('Erro ao visualizar laboratório: ' + error.message);
+    }
+}
+
+/**
+ * Excluir laboratório
+ */
+async function excluirLaboratorio(id, nome, bloco = '') {
+    try {
+        console.log('🗑️ Excluindo laboratório ID:', id);
+        
+        // Configurar modal de confirmação
+        document.getElementById('textoConfirmacaoExclusao').innerHTML = 
+            `Tem certeza que deseja excluir o laboratório <strong>"${nome}"</strong>?
+            ${bloco ? `<br><small class="text-muted">Localizado no ${bloco}</small>` : ''}`;
+        
+        // Configurar botão de confirmação
+        const btnConfirmar = document.getElementById('btnConfirmarExclusao');
+        btnConfirmar.onclick = async () => {
+            try {
+                // Verificar se há reservas associadas
+                const { data: reservas, error: errorReservas } = await supabase
+                    .from('reservas')
+                    .select('id')
+                    .eq('laboratorio_id', id)
+                    .limit(1);
+
+                if (errorReservas) throw errorReservas;
+
+                if (reservas && reservas.length > 0) {
+                    alert('Não é possível excluir este laboratório pois existem reservas associadas a ele.');
+                    return;
+                }
+
+                const { error } = await supabase
+                    .from('laboratorios')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                console.log('✅ Laboratório excluído com sucesso');
+                
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmacaoExclusao'));
+                modal.hide();
+                
+                // Recarregar lista
+                loadLaboratorios();
+                
+                alert('Laboratório excluído com sucesso!');
+
+            } catch (error) {
+                console.error('❌ Erro ao excluir laboratório:', error);
+                alert('Erro ao excluir laboratório: ' + error.message);
+            }
+        };
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalConfirmacaoExclusao'));
+        modal.show();
+
+    } catch (error) {
+        console.error('❌ Erro ao excluir laboratório:', error);
+        alert('Erro ao excluir laboratório: ' + error.message);
+    }
 }
 
 function novoEquipamento() {
