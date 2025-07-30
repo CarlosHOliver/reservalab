@@ -534,19 +534,29 @@ function esconderSemEquipamentos() {
  * Mostrar mensagem de erro
  */
 function mostrarMensagemErro(mensagem) {
-    const container = document.getElementById('viewCards');
-    container.innerHTML = `
-        <div class="col-12">
-            <div class="alert alert-danger text-center">
-                <i class="bi bi-exclamation-triangle"></i>
-                <h5>Erro ao carregar equipamentos</h5>
-                <p>${mensagem}</p>
-                <button class="btn btn-outline-danger" onclick="carregarEquipamentos()">
-                    <i class="bi bi-arrow-clockwise"></i> Tentar Novamente
-                </button>
+    const container = document.getElementById('viewTabela');
+    if (container) {
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-danger text-center">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <h5>Erro ao carregar equipamentos</h5>
+                    <p>${mensagem}</p>
+                    <button class="btn btn-outline-danger" onclick="carregarEquipamentos()">
+                        <i class="bi bi-arrow-clockwise"></i> Tentar Novamente
+                    </button>
+                </div>
             </div>
-        </div>
-    `;
+        `;
+    } else {
+        // Fallback: usar Utils.showToast se disponível
+        if (typeof Utils !== 'undefined' && Utils.showToast) {
+            Utils.showToast(mensagem, 'danger');
+        } else {
+            console.error('Erro:', mensagem);
+            alert('Erro: ' + mensagem);
+        }
+    }
 }
 
 /**
@@ -562,6 +572,14 @@ function atualizarContador() {
     }
     
     document.getElementById('totalEquipamentos').textContent = texto;
+}
+
+/**
+ * Alterar visualização entre cards e tabela
+ */
+function alterarVisualizacao(tipo) {
+    estadoEquipamentos.visualizacaoAtual = tipo;
+    atualizarVisualizacao();
 }
 
 // Exportar funções para uso global

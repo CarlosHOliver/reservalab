@@ -6,13 +6,29 @@
  */
 
 // Configurações do Supabase
-const SUPABASE_CONFIG = {
-    url: 'https://ptyzutlqliekgxktcyru.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0eXp1dGxxbGlla2d4a3RjeXJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMDgwNTIsImV4cCI6MjA2ODg4NDA1Mn0.xErQ_zcI6yqUbCnCqSUL6gkwmu4eyjSNMDyXAn0m7dk'
+const CONFIG = {
+    SUPABASE_URL: 'https://ptyzutlqliekgxktcyru.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0eXp1dGxxbGlla2d4a3RjeXJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMDgwNTIsImV4cCI6MjA2ODg4NDA1Mn0.xErQ_zcI6yqUbCnCqSUL6gkwmu4eyjSNMDyXAn0m7dk'
 };
 
-// Inicializar cliente Supabase
-const supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+// Compatibilidade com código antigo
+const SUPABASE_CONFIG = {
+    url: CONFIG.SUPABASE_URL,
+    anonKey: CONFIG.SUPABASE_ANON_KEY
+};
+
+// Inicializar cliente Supabase com verificação
+let supabase;
+try {
+    if (typeof window !== 'undefined' && window.supabase && typeof window.supabase.createClient === 'function') {
+        supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+        console.log('✅ Cliente Supabase inicializado com sucesso');
+    } else {
+        console.error('❌ Biblioteca Supabase não carregada ou createClient não disponível');
+    }
+} catch (error) {
+    console.error('❌ Erro ao inicializar cliente Supabase:', error);
+}
 
 // Constantes do sistema
 const SISTEMA_CONFIG = {
