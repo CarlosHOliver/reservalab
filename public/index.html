@@ -48,6 +48,9 @@
                         <button class="btn btn-outline-light btn-sm" onclick="window.location.href='admin/'">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </button>
+                        <button class="btn btn-outline-light btn-sm" onclick="window.location.href='patrimonial.html'">
+                            <i class="bi bi-archive"></i> Patrimonial
+                        </button>
                     </div>
                 </div>
             </div>
@@ -145,7 +148,7 @@
                                     <label class="form-label">Recorrência</label>
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <select class="form-select" id="recorrenciaTipo">
+                                            <select class="form-select" id="recorrenciaTipo" disabled>
                                                 <option value="nenhuma">Sem recorrência</option>
                                                 <option value="diaria">Diária</option>
                                                 <option value="semanal">Semanal</option>
@@ -157,7 +160,7 @@
                                             <div class="invalid-feedback">Data final da recorrência inválida.</div>
                                         </div>
                                     </div>
-                                    <small class="text-muted">Selecione se deseja repetir esta reserva em outros dias (máximo 2 meses à frente)</small>
+                                    <small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Em fase de implementação</small>
                                 </div>
                             </div>
 

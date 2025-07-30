@@ -947,6 +947,22 @@ function mostrarResultadoBusca(reservas) {
                             <span class="text-danger">${primeiraReserva.motivo_rejeicao}</span>
                         </div>
                     ` : ''}
+                    
+                    ${primeiraReserva.status === 'aprovada' ? `
+                        <div class="mt-3 alert alert-success">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <strong><i class="bi bi-file-earmark-text"></i> Solicitação de Acesso:</strong><br>
+                                    <small class="text-muted">Obrigatório preencher e entregar à portaria do Prédio</small>
+                                </div>
+                                <div>
+                                    <a href="docs/Aut.Acesso.docx" class="btn btn-success btn-sm" download>
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -1017,6 +1033,22 @@ function mostrarResultadoBusca(reservas) {
                         <div class="mt-3">
                             <strong>Motivo da Rejeição:</strong><br>
                             <span class="text-danger">${reserva.motivo_rejeicao}</span>
+                        </div>
+                    ` : ''}
+                    
+                    ${reserva.status === 'aprovada' ? `
+                        <div class="mt-3 alert alert-success">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <strong><i class="bi bi-file-earmark-text"></i> Solicitação de Acesso:</strong><br>
+                                    <small class="text-muted">Obrigatório preencher e entregar à portaria do Prédio</small>
+                                </div>
+                                <div>
+                                    <a href="docs/Aut.Acesso.docx" class="btn btn-success btn-sm" download>
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     ` : ''}
                 </div>
