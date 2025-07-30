@@ -902,6 +902,130 @@
         </div>
     </div>
 
+    <!-- Modal Equipamento -->
+    <div class="modal fade" id="modalEquipamento" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="modalEquipamentoTitle">
+                        <i class="bi bi-tools"></i> Novo Equipamento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEquipamento">
+                        <input type="hidden" id="equipamentoId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="equipamentoNome" class="form-label">Nome do Equipamento *</label>
+                                    <input type="text" class="form-control" id="equipamentoNome" required 
+                                           placeholder="Ex: Microscópio Digital">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="equipamentoPatrimonio" class="form-label">Número do Patrimônio *</label>
+                                    <input type="text" class="form-control" id="equipamentoPatrimonio" required 
+                                           placeholder="Ex: EQUIP001">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="equipamentoBloco" class="form-label">Bloco *</label>
+                                    <select class="form-control" id="equipamentoBloco" required>
+                                        <option value="">Selecione o bloco</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="equipamentoLocal" class="form-label">Local *</label>
+                                    <input type="text" class="form-control" id="equipamentoLocal" required 
+                                           placeholder="Ex: Sala 101, Lab. Química">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="equipamentoDescricao" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="equipamentoDescricao" rows="3" 
+                                      placeholder="Descrição do equipamento, especificações técnicas, etc."></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="equipamentoStatus" class="form-label">Status</label>
+                                    <select class="form-control" id="equipamentoStatus">
+                                        <option value="disponivel">Disponível</option>
+                                        <option value="em_manutencao">Em Manutenção</option>
+                                        <option value="inativo">Inativo</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="equipamentoFoto" class="form-label">URL da Foto</label>
+                                    <input type="url" class="form-control" id="equipamentoFoto" 
+                                           placeholder="https://exemplo.com/foto.jpg">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="equipamentoCompartilhado" 
+                                               onchange="document.getElementById('divMaxOcupantesEquip').style.display = this.checked ? 'block' : 'none'">
+                                        <label class="form-check-label" for="equipamentoCompartilhado">
+                                            Permitir uso compartilhado
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="equipamentoAcompanhamento">
+                                        <label class="form-check-label" for="equipamentoAcompanhamento">
+                                            Necessita acompanhamento
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="divMaxOcupantesEquip" style="display: none;">
+                            <label for="equipamentoMaxOcupantes" class="form-label">Máximo de ocupantes simultâneos</label>
+                            <input type="number" class="form-control" id="equipamentoMaxOcupantes" 
+                                   min="1" value="1">
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="equipamentoAtivo" checked>
+                                <label class="form-check-label" for="equipamentoAtivo">
+                                    Equipamento ativo no sistema
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-info" onclick="salvarEquipamento()">
+                        <i class="bi bi-check"></i> Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-light text-center py-3 mt-5">
         <div class="container">

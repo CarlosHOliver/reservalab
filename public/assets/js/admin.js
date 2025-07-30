@@ -870,8 +870,154 @@ async function loadLaboratorios() {
 }
 
 function loadEquipamentos() {
-    document.getElementById('tabelaEquipamentos').innerHTML = 
-        '<tr><td colspan="6" class="text-center">Funcionalidade em desenvolvimento</td></tr>';
+    try {
+        console.log('🔄 Carregando equipamentos...');
+        
+        // Verificar se supabase está disponível
+        if (typeof supabase === 'undefined') {
+            throw new Error('Cliente Supabase não inicializado');
+        }
+        
+        loadEquipamentosAsync();
+    } catch (error) {
+        console.error('❌ Erro ao inicializar carregamento de equipamentos:', error);
+        const tbody = document.getElementById('tabelaEquipamentos');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Erro ao carregar equipamentos: ${error.message}
+                    </td>
+                </tr>
+            `;
+        }
+    }
+}
+
+async function loadEquipamentosAsync() {
+    try {
+        const { data: equipamentos, error } = await supabase
+            .from('equipamentos')
+            .select(`
+                *,
+                blocos (nome)
+            `)
+            .order('nome');
+
+        if (error) {
+            console.error('❌ Erro ao carregar equipamentos:', error);
+            throw error;
+        }
+
+        console.log('✅ Equipamentos carregados:', equipamentos);
+        
+        const tbody = document.getElementById('tabelaEquipamentos');
+        
+        if (!tbody) {
+            console.error('❌ Elemento tabelaEquipamentos não encontrado');
+            return;
+        }
+        
+        if (!equipamentos || equipamentos.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-muted">
+                        <i class="bi bi-inbox"></i> Nenhum equipamento cadastrado
+                        <br><small>Clique em "Novo Equipamento" para criar o primeiro</small>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = equipamentos.map(equip => `
+            <tr>
+                <td>
+                    <strong>${equip.nome}</strong>
+                    ${equip.descricao ? `<br><small class="text-muted">${equip.descricao.substring(0, 80)}${equip.descricao.length > 80 ? '...' : ''}</small>` : ''}
+                </td>
+                <td>
+                    <span class="badge bg-secondary">${equip.patrimonio}</span>
+                    ${equip.permitir_uso_compartilhado ? 
+                        `<br><small class="text-success"><i class="bi bi-people"></i> Compartilhado (${equip.quantidade_maxima_ocupantes || 1})</small>` : 
+                        `<br><small class="text-warning"><i class="bi bi-person"></i> Individual</small>`
+                    }
+                </td>
+                <td>${equip.blocos?.nome || 'Não informado'}</td>
+                <td>${equip.local}</td>
+                <td>
+                    <span class="badge ${getStatusColor(equip.status)}">
+                        <i class="bi ${getStatusIcon(equip.status)}"></i>
+                        ${getStatusText(equip.status)}
+                    </span>
+                    ${!equip.ativo ? `<br><small class="text-danger"><i class="bi bi-x-circle"></i> Inativo</small>` : ''}
+                    ${equip.necessita_acompanhamento ? 
+                        `<br><small class="text-info"><i class="bi bi-person-check"></i> Acompanhamento</small>` : ''
+                    }
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-primary" onclick="editarEquipamento(${equip.id})" 
+                                title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-outline-info" onclick="visualizarEquipamento(${equip.id})" 
+                                title="Visualizar">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="excluirEquipamento(${equip.id}, '${equip.nome.replace(/'/g, "\\'")}', '${equip.patrimonio}')" 
+                                title="Excluir">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error('❌ Erro ao carregar equipamentos:', error);
+        const tbody = document.getElementById('tabelaEquipamentos');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Erro ao carregar equipamentos: ${error.message}
+                        <br><small>Verifique a conexão e tente novamente</small>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+}
+
+/**
+ * Funções auxiliares para status de equipamentos
+ */
+function getStatusColor(status) {
+    switch (status) {
+        case 'disponivel': return 'bg-success';
+        case 'em_manutencao': return 'bg-warning';
+        case 'inativo': return 'bg-danger';
+        default: return 'bg-secondary';
+    }
+}
+
+function getStatusIcon(status) {
+    switch (status) {
+        case 'disponivel': return 'bi-check-circle';
+        case 'em_manutencao': return 'bi-tools';
+        case 'inativo': return 'bi-x-circle';
+        default: return 'bi-question-circle';
+    }
+}
+
+function getStatusText(status) {
+    switch (status) {
+        case 'disponivel': return 'Disponível';
+        case 'em_manutencao': return 'Em Manutenção';
+        case 'inativo': return 'Inativo';
+        default: return 'Indefinido';
+    }
 }
 
 function loadFormularios() {
@@ -2121,7 +2267,320 @@ async function excluirLaboratorio(id, nome, bloco = '') {
 }
 
 function novoEquipamento() {
-    alert('Funcionalidade em desenvolvimento');
+    console.log('📝 Abrindo modal para novo equipamento');
+    limparFormularioEquipamento();
+    document.getElementById('modalEquipamentoTitle').innerHTML = 
+        '<i class="bi bi-tools"></i> Novo Equipamento';
+    
+    // Carregar blocos
+    carregarBlocosEquipamento();
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('modalEquipamento'));
+    modal.show();
+}
+
+/**
+ * Limpar formulário de equipamento
+ */
+function limparFormularioEquipamento() {
+    document.getElementById('formEquipamento').reset();
+    document.getElementById('equipamentoId').value = '';
+    document.getElementById('equipamentoMaxOcupantes').value = '1';
+    document.getElementById('equipamentoAtivo').checked = true;
+    document.getElementById('equipamentoStatus').value = 'disponivel';
+    document.getElementById('divMaxOcupantesEquip').style.display = 'none';
+}
+
+/**
+ * Carregar blocos para o select de equipamentos
+ */
+async function carregarBlocosEquipamento() {
+    try {
+        const { data: blocos, error } = await supabase
+            .from('blocos')
+            .select('*')
+            .order('nome');
+
+        if (error) throw error;
+
+        const select = document.getElementById('equipamentoBloco');
+        select.innerHTML = '<option value="">Selecione o bloco</option>';
+        
+        blocos.forEach(bloco => {
+            select.innerHTML += `<option value="${bloco.id}">${bloco.nome}</option>`;
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao carregar blocos:', error);
+        alert('Erro ao carregar blocos: ' + error.message);
+    }
+}
+
+/**
+ * Salvar equipamento
+ */
+async function salvarEquipamento() {
+    try {
+        const form = document.getElementById('formEquipamento');
+        const id = document.getElementById('equipamentoId').value;
+        
+        // Validar campos obrigatórios
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const dadosEquipamento = {
+            nome: document.getElementById('equipamentoNome').value.trim(),
+            patrimonio: document.getElementById('equipamentoPatrimonio').value.trim(),
+            bloco_id: parseInt(document.getElementById('equipamentoBloco').value),
+            local: document.getElementById('equipamentoLocal').value.trim(),
+            descricao: document.getElementById('equipamentoDescricao').value.trim() || null,
+            status: document.getElementById('equipamentoStatus').value,
+            permitir_uso_compartilhado: document.getElementById('equipamentoCompartilhado').checked,
+            necessita_acompanhamento: document.getElementById('equipamentoAcompanhamento').checked,
+            quantidade_maxima_ocupantes: document.getElementById('equipamentoCompartilhado').checked ? 
+                parseInt(document.getElementById('equipamentoMaxOcupantes').value) || 1 : 1,
+            foto_url: document.getElementById('equipamentoFoto').value.trim() || null,
+            ativo: document.getElementById('equipamentoAtivo').checked,
+            updated_at: new Date().toISOString()
+        };
+
+        let result;
+        if (id) {
+            // Atualizar equipamento existente
+            console.log('🔄 Atualizando equipamento ID:', id);
+            result = await supabase
+                .from('equipamentos')
+                .update(dadosEquipamento)
+                .eq('id', id);
+        } else {
+            // Criar novo equipamento
+            console.log('✨ Criando novo equipamento');
+            dadosEquipamento.created_at = new Date().toISOString();
+            result = await supabase
+                .from('equipamentos')
+                .insert([dadosEquipamento]);
+        }
+
+        if (result.error) throw result.error;
+
+        console.log('✅ Equipamento salvo com sucesso');
+        
+        // Fechar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalEquipamento'));
+        modal.hide();
+        
+        // Recarregar lista
+        loadEquipamentos();
+        
+        // Mostrar sucesso
+        alert(id ? 'Equipamento atualizado com sucesso!' : 'Equipamento criado com sucesso!');
+
+    } catch (error) {
+        console.error('❌ Erro ao salvar equipamento:', error);
+        if (error.message.includes('duplicate key')) {
+            alert('Erro: Já existe um equipamento com este número de patrimônio.');
+        } else {
+            alert('Erro ao salvar equipamento: ' + error.message);
+        }
+    }
+}
+
+/**
+ * Editar equipamento
+ */
+async function editarEquipamento(id) {
+    try {
+        console.log('📝 Editando equipamento ID:', id);
+        
+        const { data: equipamento, error } = await supabase
+            .from('equipamentos')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+
+        // Preencher formulário
+        document.getElementById('equipamentoId').value = equipamento.id;
+        document.getElementById('equipamentoNome').value = equipamento.nome;
+        document.getElementById('equipamentoPatrimonio').value = equipamento.patrimonio;
+        document.getElementById('equipamentoBloco').value = equipamento.bloco_id;
+        document.getElementById('equipamentoLocal').value = equipamento.local;
+        document.getElementById('equipamentoDescricao').value = equipamento.descricao || '';
+        document.getElementById('equipamentoStatus').value = equipamento.status;
+        document.getElementById('equipamentoCompartilhado').checked = equipamento.permitir_uso_compartilhado;
+        document.getElementById('equipamentoAcompanhamento').checked = equipamento.necessita_acompanhamento;
+        document.getElementById('equipamentoMaxOcupantes').value = equipamento.quantidade_maxima_ocupantes || 1;
+        document.getElementById('equipamentoFoto').value = equipamento.foto_url || '';
+        document.getElementById('equipamentoAtivo').checked = equipamento.ativo;
+
+        // Mostrar/ocultar campo de máximo de ocupantes
+        document.getElementById('divMaxOcupantesEquip').style.display = 
+            equipamento.permitir_uso_compartilhado ? 'block' : 'none';
+
+        // Atualizar título do modal
+        document.getElementById('modalEquipamentoTitle').innerHTML = 
+            '<i class="bi bi-pencil"></i> Editar Equipamento';
+        
+        // Carregar blocos
+        await carregarBlocosEquipamento();
+        
+        // Selecionar bloco correto
+        document.getElementById('equipamentoBloco').value = equipamento.bloco_id;
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalEquipamento'));
+        modal.show();
+
+    } catch (error) {
+        console.error('❌ Erro ao carregar equipamento para edição:', error);
+        alert('Erro ao carregar equipamento: ' + error.message);
+    }
+}
+
+/**
+ * Visualizar equipamento
+ */
+async function visualizarEquipamento(id) {
+    try {
+        console.log('👁️ Visualizando equipamento ID:', id);
+        
+        const { data: equipamento, error } = await supabase
+            .from('equipamentos')
+            .select(`
+                *,
+                blocos (nome)
+            `)
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+
+        const modal = new bootstrap.Modal(document.getElementById('modalDetalhesReserva'));
+        document.getElementById('detalhesReservaContent').innerHTML = `
+            <div class="row">
+                <div class="col-md-8">
+                    <h5><i class="bi bi-tools"></i> ${equipamento.nome}</h5>
+                    <p><strong>Patrimônio:</strong> <span class="badge bg-secondary">${equipamento.patrimonio}</span></p>
+                    <p><strong>Localização:</strong> ${equipamento.blocos?.nome || 'Não informado'} - ${equipamento.local}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge ${getStatusColor(equipamento.status)}">
+                            <i class="bi ${getStatusIcon(equipamento.status)}"></i>
+                            ${getStatusText(equipamento.status)}
+                        </span>
+                        ${!equipamento.ativo ? '<span class="badge bg-danger ms-2">Inativo no Sistema</span>' : ''}
+                    </p>
+                    
+                    <h6>Configurações:</h6>
+                    <ul>
+                        <li><strong>Uso compartilhado:</strong> ${equipamento.permitir_uso_compartilhado ? 'Sim' : 'Não'}</li>
+                        ${equipamento.permitir_uso_compartilhado ? 
+                            `<li><strong>Máximo de ocupantes simultâneos:</strong> ${equipamento.quantidade_maxima_ocupantes || 1}</li>` : ''
+                        }
+                        <li><strong>Necessita acompanhamento:</strong> ${equipamento.necessita_acompanhamento ? 'Sim' : 'Não'}</li>
+                    </ul>
+                    
+                    ${equipamento.descricao ? `
+                        <h6>Descrição:</h6>
+                        <p>${equipamento.descricao}</p>
+                    ` : ''}
+                    
+                    <p><small class="text-muted">
+                        Criado em: ${formatarDataFallback(equipamento.created_at)}<br>
+                        Atualizado em: ${formatarDataFallback(equipamento.updated_at)}
+                    </small></p>
+                </div>
+                <div class="col-md-4">
+                    ${equipamento.foto_url ? `
+                        <img src="${equipamento.foto_url}" class="img-fluid rounded" alt="Foto do equipamento" 
+                             onerror="this.style.display='none'">
+                    ` : `
+                        <div class="text-center p-4 bg-light rounded">
+                            <i class="bi bi-image" style="font-size: 3rem; color: #ccc;"></i>
+                            <p class="text-muted mt-2">Sem foto</p>
+                        </div>
+                    `}
+                </div>
+            </div>
+        `;
+        
+        // Ocultar botões de ação
+        document.getElementById('btnAprovar').style.display = 'none';
+        document.getElementById('btnRejeitar').style.display = 'none';
+        
+        modal.show();
+
+    } catch (error) {
+        console.error('❌ Erro ao visualizar equipamento:', error);
+        alert('Erro ao visualizar equipamento: ' + error.message);
+    }
+}
+
+/**
+ * Excluir equipamento
+ */
+async function excluirEquipamento(id, nome, patrimonio) {
+    try {
+        console.log('🗑️ Excluindo equipamento ID:', id);
+        
+        // Configurar modal de confirmação
+        document.getElementById('textoConfirmacaoExclusao').innerHTML = 
+            `Tem certeza que deseja excluir o equipamento <strong>"${nome}"</strong>?
+            <br><small class="text-muted">Patrimônio: ${patrimonio}</small>`;
+        
+        // Configurar botão de confirmação
+        const btnConfirmar = document.getElementById('btnConfirmarExclusao');
+        btnConfirmar.onclick = async () => {
+            try {
+                // Verificar se há reservas associadas
+                const { data: reservas, error: errorReservas } = await supabase
+                    .from('reservas')
+                    .select('id')
+                    .eq('equipamento_id', id)
+                    .limit(1);
+
+                if (errorReservas) throw errorReservas;
+
+                if (reservas && reservas.length > 0) {
+                    alert('Não é possível excluir este equipamento pois existem reservas associadas a ele.');
+                    return;
+                }
+
+                const { error } = await supabase
+                    .from('equipamentos')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                console.log('✅ Equipamento excluído com sucesso');
+                
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmacaoExclusao'));
+                modal.hide();
+                
+                // Recarregar lista
+                loadEquipamentos();
+                
+                alert('Equipamento excluído com sucesso!');
+
+            } catch (error) {
+                console.error('❌ Erro ao excluir equipamento:', error);
+                alert('Erro ao excluir equipamento: ' + error.message);
+            }
+        };
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalConfirmacaoExclusao'));
+        modal.show();
+
+    } catch (error) {
+        console.error('❌ Erro ao excluir equipamento:', error);
+        alert('Erro ao excluir equipamento: ' + error.message);
+    }
 }
 
 function novoFormulario() {
