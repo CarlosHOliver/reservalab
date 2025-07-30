@@ -178,17 +178,17 @@ function aplicarFiltros() {
     // Filtro por status
     const filtroStatus = document.getElementById('filtroStatus')?.value;
     if (filtroStatus) {
-        laboratoriosFiltrados = laboratoriosFiltrados.filter(lab => lab.status === filtroStatus);
+        laboratoriosFiltrados = laboratoriosFiltrados.filter(lab => lab.ativo === (filtroStatus === 'true'));
     }
     
-    // Filtro por compartilhamento
+    // Filtro por uso compartilhado
     const filtroCompartilhado = document.getElementById('filtroCompartilhado')?.value;
     if (filtroCompartilhado !== '') {
         laboratoriosFiltrados = laboratoriosFiltrados.filter(lab => 
-            lab.compartilhado === (filtroCompartilhado === 'true')
+            lab.permitir_uso_compartilhado === (filtroCompartilhado === 'true')
         );
     }
-    
+
     estadoLaboratorios.laboratoriosFiltrados = laboratoriosFiltrados;
     atualizarVisualizacao();
     atualizarContador();
@@ -257,7 +257,7 @@ function renderizarCards(laboratorios) {
                     <h6 class="mb-0">
                         <i class="bi bi-building me-2"></i>${lab.nome}
                     </h6>
-                    <span class="badge ${getStatusBadgeClass(lab.status)}">${getStatusText(lab.status)}</span>
+                    <span class="badge ${getStatusBadgeClass(lab.ativo)}">${getStatusText(lab.ativo)}</span>
                 </div>
                 <div class="card-body">
                     <div class="row mb-2">
@@ -273,15 +273,16 @@ function renderizarCards(laboratorios) {
                     
                     <div class="row mb-2">
                         <div class="col-6">
-                            <small class="text-muted">Compartilhado:</small><br>
-                            <span class="badge ${lab.compartilhado ? 'bg-success' : 'bg-warning'}">
-                                ${lab.compartilhado ? 'Sim' : 'Não'}
+                            <small class="text-muted">Uso Compartilhado:</small><br>
+                            <span class="badge ${lab.permitir_uso_compartilhado ? 'bg-success' : 'bg-warning'}">
+                                ${lab.permitir_uso_compartilhado ? 'Permitido' : 'Exclusivo'}
                             </span>
+                            ${lab.permitir_uso_compartilhado ? `<br><small class="text-muted">Máx: ${lab.quantidade_maxima_ocupantes_simultaneos || 1} grupos</small>` : ''}
                         </div>
                         <div class="col-6">
                             <small class="text-muted">Acompanhamento:</small><br>
-                            <span class="badge ${lab.requer_acompanhamento ? 'bg-warning' : 'bg-success'}">
-                                ${lab.requer_acompanhamento ? 'Necessário' : 'Não necessário'}
+                            <span class="badge ${lab.necessita_acompanhamento ? 'bg-warning' : 'bg-success'}">
+                                ${lab.necessita_acompanhamento ? 'Necessário' : 'Não necessário'}
                             </span>
                         </div>
                     </div>
@@ -322,7 +323,7 @@ function renderizarLista(laboratorios) {
             <div class="d-flex w-100 justify-content-between">
                 <h6 class="mb-1">
                     <i class="bi bi-building me-2"></i>${lab.nome}
-                    <span class="badge ${getStatusBadgeClass(lab.status)} ms-2">${getStatusText(lab.status)}</span>
+                    <span class="badge ${getStatusBadgeClass(lab.ativo)} ms-2">${getStatusText(lab.ativo)}</span>
                 </h6>
                 <small class="text-muted">${lab.bloco_nome || 'N/A'}</small>
             </div>
@@ -331,8 +332,8 @@ function renderizarLista(laboratorios) {
                     <p class="mb-1">${lab.descricao || 'Sem descrição'}</p>
                     <small class="text-muted">
                         Capacidade: ${lab.capacidade || 'N/A'} pessoas | 
-                        Compartilhado: ${lab.compartilhado ? 'Sim' : 'Não'} | 
-                        Acompanhamento: ${lab.requer_acompanhamento ? 'Necessário' : 'Não necessário'}
+                        Uso Compartilhado: ${lab.permitir_uso_compartilhado ? `Sim (máx: ${lab.quantidade_maxima_ocupantes_simultaneos || 1} grupos)` : 'Não'} | 
+                        Acompanhamento: ${lab.necessita_acompanhamento ? 'Necessário' : 'Não necessário'}
                     </small>
                 </div>
                 <div class="col-md-4 text-end">
@@ -340,7 +341,7 @@ function renderizarLista(laboratorios) {
                         <button class="btn btn-outline-primary" onclick="verDetalhesLaboratorio(${lab.id})">
                             <i class="bi bi-eye"></i> Detalhes
                         </button>
-                        ${lab.status === 'disponivel' ? `
+                        ${lab.ativo ? `
                             <button class="btn btn-primary" onclick="reservarLaboratorio(${lab.id})">
                                 <i class="bi bi-calendar-plus"></i> Reservar
                             </button>
@@ -367,16 +368,16 @@ function renderizarTabela(laboratorios) {
             <td>${lab.bloco_nome || 'N/A'}</td>
             <td>${lab.capacidade || 'N/A'} pessoas</td>
             <td>
-                <span class="badge ${getStatusBadgeClass(lab.status)}">${getStatusText(lab.status)}</span>
+                <span class="badge ${getStatusBadgeClass(lab.ativo)}">${getStatusText(lab.ativo)}</span>
             </td>
             <td>
-                <span class="badge ${lab.compartilhado ? 'bg-success' : 'bg-warning'}">
-                    ${lab.compartilhado ? 'Sim' : 'Não'}
+                <span class="badge ${lab.permitir_uso_compartilhado ? 'bg-success' : 'bg-warning'}">
+                    ${lab.permitir_uso_compartilhado ? `Sim (${lab.quantidade_maxima_ocupantes_simultaneos || 1})` : 'Exclusivo'}
                 </span>
             </td>
             <td>
-                <span class="badge ${lab.requer_acompanhamento ? 'bg-warning' : 'bg-success'}">
-                    ${lab.requer_acompanhamento ? 'Necessário' : 'Não necessário'}
+                <span class="badge ${lab.necessita_acompanhamento ? 'bg-warning' : 'bg-success'}">
+                    ${lab.necessita_acompanhamento ? 'Necessário' : 'Não necessário'}
                 </span>
             </td>
             <td>
@@ -384,7 +385,7 @@ function renderizarTabela(laboratorios) {
                     <button class="btn btn-outline-primary" onclick="verDetalhesLaboratorio(${lab.id})">
                         <i class="bi bi-eye"></i>
                     </button>
-                    ${lab.status === 'disponivel' ? `
+                    ${lab.ativo ? `
                         <button class="btn btn-primary" onclick="reservarLaboratorio(${lab.id})">
                             <i class="bi bi-calendar-plus"></i>
                         </button>
@@ -416,14 +417,15 @@ async function verDetalhesLaboratorio(laboratorioId) {
                         <tr><td><strong>Nome:</strong></td><td>${laboratorio.nome}</td></tr>
                         <tr><td><strong>Bloco:</strong></td><td>${laboratorio.bloco_nome || 'N/A'}</td></tr>
                         <tr><td><strong>Capacidade:</strong></td><td>${laboratorio.capacidade || 'N/A'} pessoas</td></tr>
-                        <tr><td><strong>Status:</strong></td><td><span class="badge ${getStatusBadgeClass(laboratorio.status)}">${getStatusText(laboratorio.status)}</span></td></tr>
+                        <tr><td><strong>Status:</strong></td><td><span class="badge ${getStatusBadgeClass(laboratorio.ativo)}">${getStatusText(laboratorio.ativo)}</span></td></tr>
                     </table>
                 </div>
                 <div class="col-md-6">
-                    <h6><i class="bi bi-gear me-2"></i>Configurações</h6>
+                    <h6><i class="bi bi-gear me-2"></i>Configurações de Uso</h6>
                     <table class="table table-sm">
-                        <tr><td><strong>Compartilhado:</strong></td><td><span class="badge ${laboratorio.compartilhado ? 'bg-success' : 'bg-warning'}">${laboratorio.compartilhado ? 'Sim' : 'Não'}</span></td></tr>
-                        <tr><td><strong>Acompanhamento:</strong></td><td><span class="badge ${laboratorio.requer_acompanhamento ? 'bg-warning' : 'bg-success'}">${laboratorio.requer_acompanhamento ? 'Necessário' : 'Não necessário'}</span></td></tr>
+                        <tr><td><strong>Uso Compartilhado:</strong></td><td><span class="badge ${laboratorio.permitir_uso_compartilhado ? 'bg-success' : 'bg-warning'}">${laboratorio.permitir_uso_compartilhado ? 'Permitido' : 'Exclusivo'}</span></td></tr>
+                        ${laboratorio.permitir_uso_compartilhado ? `<tr><td><strong>Máx. Ocupantes:</strong></td><td>${laboratorio.quantidade_maxima_ocupantes_simultaneos || 1} grupos simultâneos</td></tr>` : ''}
+                        <tr><td><strong>Acompanhamento:</strong></td><td><span class="badge ${laboratorio.necessita_acompanhamento ? 'bg-warning' : 'bg-success'}">${laboratorio.necessita_acompanhamento ? 'Necessário' : 'Não necessário'}</span></td></tr>
                         <tr><td><strong>Criado em:</strong></td><td>${Utils.formatDate(laboratorio.created_at)}</td></tr>
                         <tr><td><strong>Atualizado em:</strong></td><td>${Utils.formatDate(laboratorio.updated_at)}</td></tr>
                     </table>
@@ -470,22 +472,12 @@ function reservarLaboratorio(laboratorioId = null) {
 /**
  * Utilitários
  */
-function getStatusBadgeClass(status) {
-    switch (status) {
-        case 'disponivel': return 'bg-success';
-        case 'em_manutencao': return 'bg-warning';
-        case 'inativo': return 'bg-danger';
-        default: return 'bg-secondary';
-    }
+function getStatusBadgeClass(ativo) {
+    return ativo ? 'bg-success' : 'bg-danger';
 }
 
-function getStatusText(status) {
-    switch (status) {
-        case 'disponivel': return 'Disponível';
-        case 'em_manutencao': return 'Em Manutenção';
-        case 'inativo': return 'Inativo';
-        default: return 'Desconhecido';
-    }
+function getStatusText(ativo) {
+    return ativo ? 'Disponível' : 'Inativo';
 }
 
 function mostrarLoading(mostrar) {

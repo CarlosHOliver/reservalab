@@ -76,16 +76,15 @@
                                 <label for="filtroStatus" class="form-label">Status</label>
                                 <select class="form-select" id="filtroStatus">
                                     <option value="">Todos</option>
-                                    <option value="disponivel">Disponível</option>
-                                    <option value="em_manutencao">Em Manutenção</option>
-                                    <option value="inativo">Inativo</option>
+                                    <option value="true">Disponível</option>
+                                    <option value="false">Inativo</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
-                                <label for="filtroCompartilhado" class="form-label">Compartilhamento</label>
+                                <label for="filtroCompartilhado" class="form-label">Uso Compartilhado</label>
                                 <select class="form-select" id="filtroCompartilhado">
                                     <option value="">Todos</option>
-                                    <option value="true">Compartilhado</option>
+                                    <option value="true">Permitido</option>
                                     <option value="false">Exclusivo</option>
                                 </select>
                             </div>
@@ -153,7 +152,7 @@
                                 <th>Bloco</th>
                                 <th>Capacidade</th>
                                 <th>Status</th>
-                                <th>Compartilhado</th>
+                                <th>Uso Compartilhado</th>
                                 <th>Acompanhamento</th>
                                 <th>Ações</th>
                             </tr>
