@@ -57,6 +57,60 @@ bcryptLib = getBcryptLib();
 
 // Estado da aplicação
 let currentUser = null;
+
+/**
+ * Função de debug para verificar permissões
+ * Execute no console: debugPermissoes()
+ */
+window.debugPermissoes = function() {
+    console.log('🔍 DEBUG DE PERMISSÕES');
+    console.log('================================');
+    console.log('📊 Current User:', currentUser);
+    
+    if (!currentUser) {
+        console.log('❌ Usuário não logado!');
+        return;
+    }
+    
+    console.log(`👤 Perfil: ${currentUser.perfil} (normalizado: ${currentUser.perfil?.toString()?.trim()?.toLowerCase()})`);
+    console.log(`📛 Nome: ${currentUser.nome}`);
+    console.log(`🔑 Login: ${currentUser.login}`);
+    
+    const funcionalidades = ['dashboard', 'reservas', 'laboratorios', 'equipamentos', 'usuarios', 'reports', 'formularios', 'configuracoes'];
+    
+    console.log('\n🔐 VERIFICAÇÃO DE PERMISSÕES:');
+    funcionalidades.forEach(func => {
+        const permissao = verificarPermissao(func);
+        console.log(`${permissao ? '✅' : '❌'} ${func}: ${permissao ? 'PERMITIDO' : 'NEGADO'}`);
+    });
+    
+    console.log('\n🎯 ESTADO DOS MENUS:');
+    const navUsuarios = document.getElementById('navUsuarios');
+    if (navUsuarios) {
+        console.log(`👥 Menu Usuários: ${navUsuarios.style.display === 'none' ? 'OCULTO' : 'VISÍVEL'}`);
+    }
+    
+    console.log('\n📋 PERFIS ACEITOS COMO ADMIN:');
+    console.log('✅ "admin" (minúsculo)');
+    console.log('✅ "administrador" (completo)');
+    console.log('✅ "Admin", "ADMIN", "Administrador" (qualquer case)');
+    
+    console.log('================================');
+};
+
+/**
+ * Função para forçar revalidação de menus
+ * Execute no console se necessário: revalidarMenus()
+ */
+window.revalidarMenus = function() {
+    console.log('🔄 Forçando revalidação de menus...');
+    if (currentUser) {
+        controlarVisibilidadeMenus();
+        console.log('✅ Menus revalidados!');
+    } else {
+        console.warn('❌ Usuário não logado - impossível revalidar');
+    }
+};
 let currentReservaId = null;
 
 // Inicialização
@@ -165,27 +219,38 @@ function verificarPermissao(funcionalidade) {
         return false;
     }
     
-    const perfil = currentUser.perfil;
-    console.log(`🔐 Verificando permissão: ${funcionalidade} para perfil: ${perfil}`);
+    // Normalizar perfil para evitar problemas de case/espaços
+    const perfil = currentUser.perfil?.toString()?.trim()?.toLowerCase();
+    console.log(`🔐 Verificando permissão: ${funcionalidade} para perfil: "${perfil}" (original: "${currentUser.perfil}")`);
     
-    // Administradores têm acesso total
-    if (perfil === 'admin') {
+    if (!perfil) {
+        console.error('❌ Perfil do usuário está vazio ou undefined');
+        return false;
+    }
+    
+    // Administradores têm acesso total - aceitar tanto 'admin' quanto 'administrador'
+    if (perfil === 'admin' || perfil === 'administrador') {
+        console.log(`✅ Admin tem acesso total a: ${funcionalidade}`);
         return true;
     }
     
     // Gestores têm acesso limitado - NÃO podem gerenciar usuários
     if (perfil === 'gestor') {
         const funcsPermitidas = ['dashboard', 'reservas', 'laboratorios', 'equipamentos', 'reports', 'formularios', 'configuracoes'];
-        return funcsPermitidas.includes(funcionalidade);
+        const temPermissao = funcsPermitidas.includes(funcionalidade);
+        console.log(`${temPermissao ? '✅' : '❌'} Gestor ${temPermissao ? 'tem' : 'não tem'} acesso a: ${funcionalidade}`);
+        return temPermissao;
     }
     
     // Outros perfis têm acesso ainda mais restrito
     if (perfil === 'portaria') {
         const funcsPermitidas = ['dashboard', 'reservas', 'reports'];
-        return funcsPermitidas.includes(funcionalidade);
+        const temPermissao = funcsPermitidas.includes(funcionalidade);
+        console.log(`${temPermissao ? '✅' : '❌'} Portaria ${temPermissao ? 'tem' : 'não tem'} acesso a: ${funcionalidade}`);
+        return temPermissao;
     }
     
-    console.warn(`⚠️ Perfil desconhecido: ${perfil}`);
+    console.warn(`⚠️ Perfil desconhecido: "${perfil}" - negando acesso por segurança`);
     return false;
 }
 
@@ -209,32 +274,43 @@ function showDashboard() {
  * Controlar visibilidade dos menus baseado no perfil do usuário
  */
 function controlarVisibilidadeMenus() {
-    if (!currentUser) return;
+    if (!currentUser) {
+        console.warn('⚠️ controlarVisibilidadeMenus: Usuário não logado');
+        return;
+    }
     
     const perfil = currentUser.perfil;
     console.log(`🎯 Controlando menus para perfil: ${perfil}`);
+    console.log(`🔍 Dados do usuário:`, currentUser);
     
     // Menu de usuários - apenas para administradores
     const navUsuarios = document.getElementById('navUsuarios');
     if (navUsuarios) {
+        console.log(`🔍 Verificando permissão 'usuarios' para perfil: ${perfil}`);
         if (verificarPermissao('usuarios')) {
             navUsuarios.style.display = 'block';
+            console.log('✅ Menu de usuários VISÍVEL para perfil:', perfil);
         } else {
             navUsuarios.style.display = 'none';
-            console.log('🚫 Menu de usuários ocultado para perfil:', perfil);
+            console.log('🚫 Menu de usuários OCULTO para perfil:', perfil);
         }
+    } else {
+        console.warn('⚠️ Elemento #navUsuarios não encontrado!');
     }
     
-    // Aqui podemos adicionar controle para outros menus conforme necessário
-    // Exemplo: reports apenas para admin e gestor
+    // Controle para outros menus conforme necessário
     const navReports = document.querySelector('a[onclick="showSection(\'reports\')"]')?.parentElement;
     if (navReports) {
         if (verificarPermissao('reports')) {
             navReports.style.display = 'block';
+            console.log('✅ Menu de reports visível para perfil:', perfil);
         } else {
             navReports.style.display = 'none';
+            console.log('🚫 Menu de reports oculto para perfil:', perfil);
         }
     }
+    
+    console.log('🎯 Controle de menus finalizado para perfil:', perfil);
 }
 
 /**
