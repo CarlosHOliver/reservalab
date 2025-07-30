@@ -424,7 +424,6 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 
 ---
 
-[![GitHub](https://img.shields.io/badge/GitHub-reservalab-black?style=for-the-badge&logo=github)](https://github.com/CarlosHOliver/reservalab)
-[![UFGD](https://img.shields.io/badge/UFGD-FAEN-green?style=for-the-badge)](https://portal.ufgd.edu.br)
+[![GitHub](https://img.shields.io/badge/GitHub-reservalab-black?style=for-the-badge&logo=github)](https://github.com/CarlosHOliver/reservalab) [![UFGD](https://img.shields.io/badge/UFGD-FAEN-green?style=for-the-badge)](https://portal.ufgd.edu.br)
 
 </div>
