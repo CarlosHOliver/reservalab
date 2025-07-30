@@ -157,6 +157,39 @@ function showLogin() {
 }
 
 /**
+ * Verificar se o usuário tem permissão para acessar uma funcionalidade
+ */
+function verificarPermissao(funcionalidade) {
+    if (!currentUser) {
+        console.warn('⚠️ Usuário não logado');
+        return false;
+    }
+    
+    const perfil = currentUser.perfil;
+    console.log(`🔐 Verificando permissão: ${funcionalidade} para perfil: ${perfil}`);
+    
+    // Administradores têm acesso total
+    if (perfil === 'admin') {
+        return true;
+    }
+    
+    // Gestores têm acesso limitado - NÃO podem gerenciar usuários
+    if (perfil === 'gestor') {
+        const funcsPermitidas = ['dashboard', 'reservas', 'laboratorios', 'equipamentos', 'reports', 'formularios', 'configuracoes'];
+        return funcsPermitidas.includes(funcionalidade);
+    }
+    
+    // Outros perfis têm acesso ainda mais restrito
+    if (perfil === 'portaria') {
+        const funcsPermitidas = ['dashboard', 'reservas', 'reports'];
+        return funcsPermitidas.includes(funcionalidade);
+    }
+    
+    console.warn(`⚠️ Perfil desconhecido: ${perfil}`);
+    return false;
+}
+
+/**
  * Mostrar dashboard
  */
 function showDashboard() {
@@ -165,8 +198,43 @@ function showDashboard() {
     document.getElementById('userInfo').style.display = 'block';
     document.getElementById('userName').textContent = currentUser.nome;
     
+    // Controlar visibilidade dos menus baseado no perfil
+    controlarVisibilidadeMenus();
+    
     // Carregar dados iniciais
     loadDashboardData();
+}
+
+/**
+ * Controlar visibilidade dos menus baseado no perfil do usuário
+ */
+function controlarVisibilidadeMenus() {
+    if (!currentUser) return;
+    
+    const perfil = currentUser.perfil;
+    console.log(`🎯 Controlando menus para perfil: ${perfil}`);
+    
+    // Menu de usuários - apenas para administradores
+    const navUsuarios = document.getElementById('navUsuarios');
+    if (navUsuarios) {
+        if (verificarPermissao('usuarios')) {
+            navUsuarios.style.display = 'block';
+        } else {
+            navUsuarios.style.display = 'none';
+            console.log('🚫 Menu de usuários ocultado para perfil:', perfil);
+        }
+    }
+    
+    // Aqui podemos adicionar controle para outros menus conforme necessário
+    // Exemplo: reports apenas para admin e gestor
+    const navReports = document.querySelector('a[onclick="showSection(\'reports\')"]')?.parentElement;
+    if (navReports) {
+        if (verificarPermissao('reports')) {
+            navReports.style.display = 'block';
+        } else {
+            navReports.style.display = 'none';
+        }
+    }
 }
 
 /**
@@ -266,6 +334,20 @@ function logout() {
  * Mostrar seção específica
  */
 function showSection(sectionName) {
+    // Verificar se o usuário tem permissão para acessar esta seção
+    if (!verificarPermissao(sectionName)) {
+        console.warn(`🚫 Acesso negado à seção: ${sectionName} para perfil: ${currentUser?.perfil}`);
+        
+        // Mostrar mensagem de erro
+        alert(`Acesso negado!\n\nVocê não tem permissão para acessar a seção "${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)}".\n\nPerfil atual: ${currentUser?.perfil || 'Desconhecido'}`);
+        
+        // Redirecionar para dashboard
+        if (sectionName !== 'dashboard') {
+            showSection('dashboard');
+        }
+        return;
+    }
+    
     // Ocultar todas as seções
     document.querySelectorAll('.dashboard-section').forEach(section => {
         section.style.display = 'none';
@@ -280,7 +362,11 @@ function showSection(sectionName) {
     document.getElementById(`section-${sectionName}`).style.display = 'block';
     
     // Adicionar classe active ao link clicado
-    event.target.classList.add('active');
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+    
+    console.log(`✅ Acesso permitido à seção: ${sectionName}`);
     
     // Carregar dados específicos da seção
     switch(sectionName) {
@@ -1583,6 +1669,16 @@ let usuarioEditando = null;
  * Carregar lista de usuários
  */
 async function carregarUsuarios() {
+    // Verificação de segurança - apenas administradores podem acessar usuários
+    if (!verificarPermissao('usuarios')) {
+        console.error('🚫 Tentativa de acesso não autorizada à função carregarUsuarios');
+        const tbody = document.getElementById('tabelaUsuarios');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger"><i class="bi bi-exclamation-triangle"></i> Acesso negado - Apenas administradores podem gerenciar usuários</td></tr>';
+        }
+        return;
+    }
+    
     try {
         const resultado = await API.buscarUsuarios();
         
