@@ -257,7 +257,7 @@ function showSection(sectionName) {
             loadEquipamentos();
             break;
         case 'usuarios':
-            loadUsuarios();
+            carregarUsuarios();
             break;
         case 'formularios':
             loadFormularios();
@@ -319,6 +319,14 @@ async function loadEstatisticas() {
             .eq('ativo', true);
         
         document.getElementById('totalEquipamentos').textContent = equipamentos?.length || 0;
+        
+        // Total de usuários ativos
+        const { data: usuarios } = await supabase
+            .from('usuarios')
+            .select('id')
+            .eq('ativo', true);
+        
+        document.getElementById('totalUsuarios').textContent = usuarios?.length || 0;
         
         // Estatísticas do mês
         const agora = new Date();
@@ -721,11 +729,6 @@ function loadEquipamentos() {
         '<tr><td colspan="6" class="text-center">Funcionalidade em desenvolvimento</td></tr>';
 }
 
-function loadUsuarios() {
-    document.getElementById('tabelaUsuarios').innerHTML = 
-        '<tr><td colspan="7" class="text-center">Funcionalidade em desenvolvimento</td></tr>';
-}
-
 function loadFormularios() {
     document.getElementById('tabelaFormularios').innerHTML = 
         '<tr><td colspan="4" class="text-center">Funcionalidade em desenvolvimento</td></tr>';
@@ -817,15 +820,395 @@ function getStatusText(status) {
 }
 
 // Placeholder functions para desenvolvimento futuro
+// ==================== GESTÃO DE USUÁRIOS ====================
+
+let usuarioEditando = null;
+
+/**
+ * Carregar lista de usuários
+ */
+async function carregarUsuarios() {
+    try {
+        const resultado = await API.buscarUsuarios();
+        
+        if (!resultado.sucesso) {
+            throw new Error(resultado.erro);
+        }
+        
+        const tbody = document.getElementById('tabelaUsuarios');
+        if (!tbody) return;
+        
+        if (resultado.dados.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">Nenhum usuário encontrado</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = resultado.dados.map(usuario => `
+            <tr>
+                <td>${usuario.nome}</td>
+                <td>${usuario.login}</td>
+                <td>${usuario.email}</td>
+                <td>
+                    <span class="badge ${usuario.perfil === 'administrador' ? 'bg-danger' : 'bg-primary'}">
+                        ${usuario.perfil === 'administrador' ? 'Administrador' : 'Gestor'}
+                    </span>
+                </td>
+                <td>${usuario.blocos?.nome || 'Sem bloco'}</td>
+                <td>
+                    <span class="badge ${usuario.ativo ? 'bg-success' : 'bg-secondary'}">
+                        ${usuario.ativo ? 'Ativo' : 'Inativo'}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editarUsuario(${usuario.id})" title="Editar">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="excluirUsuario(${usuario.id}, '${usuario.nome}')" title="Excluir">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Erro ao carregar usuários:', error);
+        const tbody = document.getElementById('tabelaUsuarios');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Erro ao carregar usuários</td></tr>';
+        }
+    }
+}
+
+/**
+ * Mostrar modal para novo usuário
+ */
+async function novoUsuario() {
+    usuarioEditando = null;
+    
+    // Carregar blocos para o select
+    const resultadoBlocos = await API.buscarBlocos();
+    const opcoesBlocos = resultadoBlocos.sucesso ? 
+        resultadoBlocos.dados.map(bloco => `<option value="${bloco.id}">${bloco.nome}</option>`).join('') : 
+        '<option value="">Erro ao carregar blocos</option>';
+    
+    const modalHtml = `
+        <div class="modal fade" id="modalUsuario" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Novo Usuário</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="formUsuario">
+                            <div class="mb-3">
+                                <label for="usuarioNome" class="form-label">Nome Completo <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="usuarioNome" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="usuarioLogin" class="form-label">Login <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="usuarioLogin" required>
+                                <div class="form-text">O login deve ser único no sistema</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="usuarioEmail" class="form-label">E-mail <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="usuarioEmail" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="usuarioSenha" class="form-label">Senha <span class="text-danger">*</span></label>
+                                <input type="password" class="form-control" id="usuarioSenha" required>
+                                <div class="form-text">Mínimo 6 caracteres</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="usuarioConfirmarSenha" class="form-label">Confirmar Senha <span class="text-danger">*</span></label>
+                                <input type="password" class="form-control" id="usuarioConfirmarSenha" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="usuarioPerfil" class="form-label">Perfil <span class="text-danger">*</span></label>
+                                <select class="form-control" id="usuarioPerfil" required>
+                                    <option value="">Selecione o perfil</option>
+                                    <option value="gestor">Gestor</option>
+                                    <option value="administrador">Administrador</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="usuarioBloco" class="form-label">Bloco</label>
+                                <select class="form-control" id="usuarioBloco">
+                                    <option value="">Sem bloco específico</option>
+                                    ${opcoesBlocos}
+                                </select>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="usuarioAtivo" checked>
+                                <label class="form-check-label" for="usuarioAtivo">
+                                    Usuário ativo
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="salvarUsuario()">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remover modal existente
+    const modalExistente = document.getElementById('modalUsuario');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+    
+    // Adicionar novo modal
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
+    modal.show();
+}
+
+/**
+ * Editar usuário existente
+ */
+async function editarUsuario(id) {
+    try {
+        // Buscar dados do usuário
+        const resultado = await API.buscarUsuarios();
+        if (!resultado.sucesso) {
+            throw new Error(resultado.erro);
+        }
+        
+        const usuario = resultado.dados.find(u => u.id === id);
+        if (!usuario) {
+            throw new Error('Usuário não encontrado');
+        }
+        
+        usuarioEditando = usuario;
+        
+        // Carregar blocos para o select
+        const resultadoBlocos = await API.buscarBlocos();
+        const opcoesBlocos = resultadoBlocos.sucesso ? 
+            resultadoBlocos.dados.map(bloco => `<option value="${bloco.id}" ${bloco.id === usuario.bloco_id ? 'selected' : ''}>${bloco.nome}</option>`).join('') : 
+            '<option value="">Erro ao carregar blocos</option>';
+        
+        const modalHtml = `
+            <div class="modal fade" id="modalUsuario" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title">Editar Usuário</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="formUsuario">
+                                <div class="mb-3">
+                                    <label for="usuarioNome" class="form-label">Nome Completo <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="usuarioNome" value="${usuario.nome}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="usuarioLogin" class="form-label">Login <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="usuarioLogin" value="${usuario.login}" required>
+                                    <div class="form-text">O login deve ser único no sistema</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="usuarioEmail" class="form-label">E-mail <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" id="usuarioEmail" value="${usuario.email}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="usuarioSenha" class="form-label">Nova Senha</label>
+                                    <input type="password" class="form-control" id="usuarioSenha">
+                                    <div class="form-text">Deixe em branco para manter a senha atual</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="usuarioConfirmarSenha" class="form-label">Confirmar Nova Senha</label>
+                                    <input type="password" class="form-control" id="usuarioConfirmarSenha">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="usuarioPerfil" class="form-label">Perfil <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="usuarioPerfil" required>
+                                        <option value="">Selecione o perfil</option>
+                                        <option value="gestor" ${usuario.perfil === 'gestor' ? 'selected' : ''}>Gestor</option>
+                                        <option value="administrador" ${usuario.perfil === 'administrador' ? 'selected' : ''}>Administrador</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="usuarioBloco" class="form-label">Bloco</label>
+                                    <select class="form-control" id="usuarioBloco">
+                                        <option value="">Sem bloco específico</option>
+                                        ${opcoesBlocos}
+                                    </select>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="usuarioAtivo" ${usuario.ativo ? 'checked' : ''}>
+                                    <label class="form-check-label" for="usuarioAtivo">
+                                        Usuário ativo
+                                    </label>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-warning" onclick="salvarUsuario()">Salvar Alterações</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remover modal existente
+        const modalExistente = document.getElementById('modalUsuario');
+        if (modalExistente) {
+            modalExistente.remove();
+        }
+        
+        // Adicionar novo modal
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Erro ao editar usuário:', error);
+        alert('Erro ao carregar dados do usuário: ' + error.message);
+    }
+}
+
+/**
+ * Salvar usuário (novo ou editando)
+ */
+async function salvarUsuario() {
+    try {
+        const nome = document.getElementById('usuarioNome').value.trim();
+        const login = document.getElementById('usuarioLogin').value.trim();
+        const email = document.getElementById('usuarioEmail').value.trim();
+        const senha = document.getElementById('usuarioSenha').value;
+        const confirmarSenha = document.getElementById('usuarioConfirmarSenha').value;
+        const perfil = document.getElementById('usuarioPerfil').value;
+        const blocoId = document.getElementById('usuarioBloco').value || null;
+        const ativo = document.getElementById('usuarioAtivo').checked;
+        
+        // Validações
+        if (!nome || !login || !email || !perfil) {
+            alert('Por favor, preencha todos os campos obrigatórios.');
+            return;
+        }
+        
+        if (!usuarioEditando && !senha) {
+            alert('A senha é obrigatória para novos usuários.');
+            return;
+        }
+        
+        if (senha && senha.length < 6) {
+            alert('A senha deve ter pelo menos 6 caracteres.');
+            return;
+        }
+        
+        if (senha && senha !== confirmarSenha) {
+            alert('As senhas não coincidem.');
+            return;
+        }
+        
+        // Verificar se login já existe
+        const verificacaoLogin = await API.verificarLoginExistente(login, usuarioEditando?.id);
+        if (!verificacaoLogin.sucesso) {
+            throw new Error(verificacaoLogin.erro);
+        }
+        if (verificacaoLogin.existe) {
+            alert('Este login já está sendo usado por outro usuário.');
+            return;
+        }
+        
+        // Verificar se email já existe
+        const verificacaoEmail = await API.verificarEmailExistente(email, usuarioEditando?.id);
+        if (!verificacaoEmail.sucesso) {
+            throw new Error(verificacaoEmail.erro);
+        }
+        if (verificacaoEmail.existe) {
+            alert('Este e-mail já está sendo usado por outro usuário.');
+            return;
+        }
+        
+        // Preparar dados para salvar
+        const dadosUsuario = {
+            nome,
+            login,
+            email,
+            perfil,
+            bloco_id: blocoId,
+            ativo
+        };
+        
+        // Se há senha, criptografar
+        if (senha) {
+            const bcryptLib = getBcryptLib();
+            if (!bcryptLib) {
+                throw new Error('Biblioteca de criptografia não disponível');
+            }
+            
+            const salt = bcryptLib.genSaltSync(10);
+            dadosUsuario.senha_hash = bcryptLib.hashSync(senha, salt);
+        }
+        
+        let resultado;
+        if (usuarioEditando) {
+            // Atualizar usuário existente
+            resultado = await API.atualizarUsuario(usuarioEditando.id, dadosUsuario);
+        } else {
+            // Criar novo usuário
+            resultado = await API.criarUsuario(dadosUsuario);
+        }
+        
+        if (!resultado.sucesso) {
+            throw new Error(resultado.erro);
+        }
+        
+        // Fechar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalUsuario'));
+        modal.hide();
+        
+        // Recarregar lista
+        await carregarUsuarios();
+        
+        alert(usuarioEditando ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!');
+        
+    } catch (error) {
+        console.error('Erro ao salvar usuário:', error);
+        alert('Erro ao salvar usuário: ' + error.message);
+    }
+}
+
+/**
+ * Excluir usuário
+ */
+async function excluirUsuario(id, nome) {
+    if (!confirm(`Tem certeza que deseja excluir o usuário "${nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+        return;
+    }
+    
+    try {
+        const resultado = await API.excluirUsuario(id);
+        
+        if (!resultado.sucesso) {
+            throw new Error(resultado.erro);
+        }
+        
+        await carregarUsuarios();
+        alert('Usuário excluído com sucesso!');
+        
+    } catch (error) {
+        console.error('Erro ao excluir usuário:', error);
+        alert('Erro ao excluir usuário: ' + error.message);
+    }
+}
+
 function novoLaboratorio() {
     alert('Funcionalidade em desenvolvimento');
 }
 
 function novoEquipamento() {
-    alert('Funcionalidade em desenvolvimento');
-}
-
-function novoUsuario() {
     alert('Funcionalidade em desenvolvimento');
 }
 

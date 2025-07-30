@@ -89,6 +89,131 @@ const API = {
     },
 
     /**
+     * Buscar todos os usuários
+     */
+    async buscarUsuarios() {
+        try {
+            const { data, error } = await supabase
+                .from('usuarios')
+                .select(`
+                    *,
+                    blocos (nome)
+                `)
+                .order('nome');
+
+            if (error) throw error;
+            return { sucesso: true, dados: data };
+        } catch (error) {
+            console.error('Erro ao buscar usuários:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
+     * Criar novo usuário
+     */
+    async criarUsuario(dadosUsuario) {
+        try {
+            const { data, error } = await supabase
+                .from('usuarios')
+                .insert([dadosUsuario])
+                .select();
+
+            if (error) throw error;
+            return { sucesso: true, dados: data[0] };
+        } catch (error) {
+            console.error('Erro ao criar usuário:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
+     * Atualizar usuário
+     */
+    async atualizarUsuario(id, dadosUsuario) {
+        try {
+            const { data, error } = await supabase
+                .from('usuarios')
+                .update(dadosUsuario)
+                .eq('id', id)
+                .select();
+
+            if (error) throw error;
+            return { sucesso: true, dados: data[0] };
+        } catch (error) {
+            console.error('Erro ao atualizar usuário:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
+     * Excluir usuário (soft delete)
+     */
+    async excluirUsuario(id) {
+        try {
+            const { data, error } = await supabase
+                .from('usuarios')
+                .update({ ativo: false })
+                .eq('id', id)
+                .select();
+
+            if (error) throw error;
+            return { sucesso: true, dados: data[0] };
+        } catch (error) {
+            console.error('Erro ao excluir usuário:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
+     * Verificar se login já existe
+     */
+    async verificarLoginExistente(login, idExcluir = null) {
+        try {
+            let query = supabase
+                .from('usuarios')
+                .select('id')
+                .eq('login', login);
+
+            if (idExcluir) {
+                query = query.neq('id', idExcluir);
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+            return { sucesso: true, existe: data.length > 0 };
+        } catch (error) {
+            console.error('Erro ao verificar login:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
+     * Verificar se email já existe
+     */
+    async verificarEmailExistente(email, idExcluir = null) {
+        try {
+            let query = supabase
+                .from('usuarios')
+                .select('id')
+                .eq('email', email);
+
+            if (idExcluir) {
+                query = query.neq('id', idExcluir);
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+            return { sucesso: true, existe: data.length > 0 };
+        } catch (error) {
+            console.error('Erro ao verificar email:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
      * Buscar todos os laboratórios
      */
     async buscarLaboratorios() {
