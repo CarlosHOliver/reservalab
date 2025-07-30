@@ -12,18 +12,24 @@
     <!-- CSS Customizado -->
     <link href="../assets/css/style.css" rel="stylesheet">
     <style>
-        .col-md-2-4 {
+        .col-md-2 {
             flex: 0 0 auto;
-            width: 20%;
+            width: 16.66667%;
+        }
+        @media (max-width: 992px) {
+            .col-md-2 {
+                width: 33.33333%;
+                margin-bottom: 1rem;
+            }
         }
         @media (max-width: 768px) {
-            .col-md-2-4 {
+            .col-md-2 {
                 width: 50%;
                 margin-bottom: 1rem;
             }
         }
         @media (max-width: 576px) {
-            .col-md-2-4 {
+            .col-md-2 {
                 width: 100%;
             }
         }
@@ -122,6 +128,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('reports')">
+                            <i class="bi bi-exclamation-triangle"></i> Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="#" onclick="showSection('formularios')">
                             <i class="bi bi-file-text"></i> Formulários
                         </a>
@@ -139,7 +150,7 @@
             <!-- Seção Dashboard -->
             <div id="section-dashboard" class="dashboard-section">
                 <div class="row mb-4">
-                    <div class="col-md-2-4">
+                    <div class="col-md-2">
                         <div class="card text-center">
                             <div class="card-body">
                                 <i class="bi bi-clock-history text-warning" style="font-size: 2rem;"></i>
@@ -148,7 +159,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-2-4">
+                    <div class="col-md-2">
                         <div class="card text-center">
                             <div class="card-body">
                                 <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
@@ -157,7 +168,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-2-4">
+                    <div class="col-md-2">
                         <div class="card text-center">
                             <div class="card-body">
                                 <i class="bi bi-building text-primary" style="font-size: 2rem;"></i>
@@ -166,7 +177,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-2-4">
+                    <div class="col-md-2">
                         <div class="card text-center">
                             <div class="card-body">
                                 <i class="bi bi-tools text-info" style="font-size: 2rem;"></i>
@@ -175,12 +186,21 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-2-4">
+                    <div class="col-md-2">
                         <div class="card text-center">
                             <div class="card-body">
                                 <i class="bi bi-people text-secondary" style="font-size: 2rem;"></i>
                                 <h4 class="mt-2" id="totalUsuarios">0</h4>
                                 <p class="text-muted">Usuários Ativos</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
+                                <h4 class="mt-2" id="totalReportsPendentesDb">0</h4>
+                                <p class="text-muted">Reports Pendentes</p>
                             </div>
                         </div>
                     </div>
@@ -343,6 +363,120 @@
                 </div>
             </div>
 
+            <!-- Seção Reports -->
+            <div id="section-reports" class="dashboard-section" style="display: none;">
+                <!-- Estatísticas de Reports -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-center bg-warning text-dark">
+                            <div class="card-body">
+                                <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
+                                <h4 class="mt-2" id="totalReportsPendentes">0</h4>
+                                <p class="mb-0">Pendentes</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center bg-info text-white">
+                            <div class="card-body">
+                                <i class="bi bi-clipboard-check" style="font-size: 2rem;"></i>
+                                <h4 class="mt-2" id="totalReportsResolvidos">0</h4>
+                                <p class="mb-0">Resolvidos</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center bg-primary text-white">
+                            <div class="card-body">
+                                <i class="bi bi-clipboard-data" style="font-size: 2rem;"></i>
+                                <h4 class="mt-2" id="totalReports">0</h4>
+                                <p class="mb-0">Total</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center bg-secondary text-white">
+                            <div class="card-body">
+                                <i class="bi bi-calendar-week" style="font-size: 2rem;"></i>
+                                <h4 class="mt-2" id="reportsUltimos7Dias">0</h4>
+                                <p class="mb-0">Últimos 7 dias</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros e Controles -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Gerenciar Reports/Ocorrências</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label for="filtroStatusReport" class="form-label">Status:</label>
+                                <select class="form-control" id="filtroStatusReport">
+                                    <option value="">Todos os Status</option>
+                                    <option value="aberto">Aberto</option>
+                                    <option value="em_analise">Em Análise</option>
+                                    <option value="resolvido">Resolvido</option>
+                                    <option value="arquivado">Arquivado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filtroTipoReport" class="form-label">Tipo:</label>
+                                <select class="form-control" id="filtroTipoReport">
+                                    <option value="">Todos os Tipos</option>
+                                    <option value="nao_compareceu">Não compareceu</option>
+                                    <option value="problema_acesso">Problema de acesso</option>
+                                    <option value="equipamento_danificado">Equipamento danificado</option>
+                                    <option value="uso_inadequado">Uso inadequado</option>
+                                    <option value="outros">Outros</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="filtroCienteReport" class="form-label">Ciência:</label>
+                                <select class="form-control" id="filtroCienteReport">
+                                    <option value="">Todos</option>
+                                    <option value="false">Sem ciência</option>
+                                    <option value="true">Com ciência</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-primary" onclick="filtrarReports()">
+                                        <i class="bi bi-search"></i> Filtrar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tabela de Reports -->
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Data/Hora</th>
+                                        <th>Tipo</th>
+                                        <th>Protocolo</th>
+                                        <th>Descrição</th>
+                                        <th>Status</th>
+                                        <th>Ciência</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaReports">
+                                    <tr>
+                                        <td colspan="8" class="text-center">Carregando reports...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Seção Usuários -->
             <div id="section-usuarios" class="dashboard-section" style="display: none;">
                 <div class="card">
@@ -490,6 +624,100 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalhes do Report -->
+    <div class="modal fade" id="modalDetalhesReport" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle"></i> Detalhes do Report
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detalhesReportContent">
+                    <!-- Conteúdo será preenchido dinamicamente -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-success" id="btnMarcarCiente" onclick="mostrarModalCiencia()" style="display: none;">
+                        <i class="bi bi-check"></i> Marcar Ciência
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btnAlterarStatus" onclick="mostrarModalStatus()" style="display: none;">
+                        <i class="bi bi-pencil"></i> Alterar Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Marcar Ciência -->
+    <div class="modal fade" id="modalCiencia" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-check-circle"></i> Marcar Ciência
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Confirmação:</strong> Você está marcando ciência deste report. Esta ação registrará seu nome e horário.
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacoesCiencia" class="form-label">Observações (opcional):</label>
+                        <textarea class="form-control" id="observacoesCiencia" rows="3" 
+                                  placeholder="Adicione observações sobre as providências tomadas..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="confirmarCiencia()">
+                        <i class="bi bi-check"></i> Confirmar Ciência
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Alterar Status -->
+    <div class="modal fade" id="modalStatus" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil"></i> Alterar Status
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="novoStatus" class="form-label">Novo Status:</label>
+                        <select class="form-control" id="novoStatus" required>
+                            <option value="">Selecione o novo status</option>
+                            <option value="aberto">Aberto</option>
+                            <option value="em_analise">Em Análise</option>
+                            <option value="resolvido">Resolvido</option>
+                            <option value="arquivado">Arquivado</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacoesStatus" class="form-label">Observações:</label>
+                        <textarea class="form-control" id="observacoesStatus" rows="3" 
+                                  placeholder="Descreva as ações tomadas ou motivo da alteração..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmarAlteracaoStatus()">
+                        <i class="bi bi-check"></i> Alterar Status
+                    </button>
                 </div>
             </div>
         </div>

@@ -259,6 +259,9 @@ function showSection(sectionName) {
         case 'usuarios':
             carregarUsuarios();
             break;
+        case 'reports':
+            carregarReports();
+            break;
         case 'formularios':
             loadFormularios();
             break;
@@ -327,6 +330,12 @@ async function loadEstatisticas() {
             .eq('ativo', true);
         
         document.getElementById('totalUsuarios').textContent = usuarios?.length || 0;
+        
+        // Total de reports pendentes
+        const resultadoReports = await API.buscarEstatisticasReports();
+        if (resultadoReports.sucesso) {
+            document.getElementById('totalReportsPendentesDb').textContent = resultadoReports.dados.pendentes;
+        }
         
         // Estatísticas do mês
         const agora = new Date();
@@ -820,6 +829,470 @@ function getStatusText(status) {
 }
 
 // Placeholder functions para desenvolvimento futuro
+// ==================== GESTÃO DE REPORTS/OCORRÊNCIAS ====================
+
+let reportAtual = null;
+
+/**
+ * Carregar lista de reports
+ */
+async function carregarReports() {
+    try {
+        // Carregar estatísticas
+        await carregarEstatisticasReports();
+        
+        // Carregar lista de reports
+        const resultado = await API.buscarReports();
+        
+        if (!resultado.sucesso) {
+            throw new Error(resultado.erro);
+        }
+        
+        const tbody = document.getElementById('tabelaReports');
+        if (!tbody) return;
+        
+        if (resultado.dados.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhum report encontrado</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = resultado.dados.map(report => {
+            const dataFormatada = formatarDataFallback(report.created_at);
+            const tipoFormatado = formatarTipoEventualidade(report.tipo_eventualidade);
+            const statusBadge = getStatusBadge(report.status);
+            const cienciaBadge = getCienciaBadge(report.ciente, report.ciente_por_usuario?.nome);
+            
+            return `
+                <tr ${!report.ciente ? 'class="table-warning"' : ''}>
+                    <td><strong>#${report.id}</strong></td>
+                    <td><small>${dataFormatada}</small></td>
+                    <td>${tipoFormatado}</td>
+                    <td>
+                        ${report.protocolo_relacionado ? 
+                            `<span class="badge bg-info">${report.protocolo_relacionado}</span>` : 
+                            '<span class="text-muted">-</span>'
+                        }
+                    </td>
+                    <td>
+                        <div class="text-truncate" style="max-width: 200px;" title="${report.descricao}">
+                            ${report.descricao}
+                        </div>
+                    </td>
+                    <td>${statusBadge}</td>
+                    <td>${cienciaBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="verDetalhesReport(${report.id})" title="Ver detalhes">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        ${!report.ciente ? 
+                            `<button class="btn btn-sm btn-outline-success" onclick="marcarCienciaRapida(${report.id})" title="Marcar ciência">
+                                <i class="bi bi-check"></i>
+                            </button>` : ''
+                        }
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Erro ao carregar reports:', error);
+        const tbody = document.getElementById('tabelaReports');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Erro ao carregar reports</td></tr>';
+        }
+    }
+}
+
+/**
+ * Carregar estatísticas de reports
+ */
+async function carregarEstatisticasReports() {
+    try {
+        const resultado = await API.buscarEstatisticasReports();
+        
+        if (resultado.sucesso) {
+            document.getElementById('totalReports').textContent = resultado.dados.total;
+            document.getElementById('totalReportsPendentes').textContent = resultado.dados.pendentes;
+            document.getElementById('totalReportsResolvidos').textContent = resultado.dados.resolvidos;
+            document.getElementById('reportsUltimos7Dias').textContent = resultado.dados.ultimos7Dias;
+        }
+    } catch (error) {
+        console.error('Erro ao carregar estatísticas de reports:', error);
+    }
+}
+
+/**
+ * Filtrar reports
+ */
+async function filtrarReports() {
+    const filtros = {
+        status: document.getElementById('filtroStatusReport').value,
+        tipo_eventualidade: document.getElementById('filtroTipoReport').value,
+        ciente: document.getElementById('filtroCienteReport').value === '' ? undefined : 
+                document.getElementById('filtroCienteReport').value === 'true'
+    };
+    
+    try {
+        const resultado = await API.buscarReports(filtros);
+        
+        if (!resultado.sucesso) {
+            throw new Error(resultado.erro);
+        }
+        
+        const tbody = document.getElementById('tabelaReports');
+        if (!tbody) return;
+        
+        if (resultado.dados.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhum report encontrado com os filtros aplicados</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = resultado.dados.map(report => {
+            const dataFormatada = formatarDataFallback(report.created_at);
+            const tipoFormatado = formatarTipoEventualidade(report.tipo_eventualidade);
+            const statusBadge = getStatusBadge(report.status);
+            const cienciaBadge = getCienciaBadge(report.ciente, report.ciente_por_usuario?.nome);
+            
+            return `
+                <tr ${!report.ciente ? 'class="table-warning"' : ''}>
+                    <td><strong>#${report.id}</strong></td>
+                    <td><small>${dataFormatada}</small></td>
+                    <td>${tipoFormatado}</td>
+                    <td>
+                        ${report.protocolo_relacionado ? 
+                            `<span class="badge bg-info">${report.protocolo_relacionado}</span>` : 
+                            '<span class="text-muted">-</span>'
+                        }
+                    </td>
+                    <td>
+                        <div class="text-truncate" style="max-width: 200px;" title="${report.descricao}">
+                            ${report.descricao}
+                        </div>
+                    </td>
+                    <td>${statusBadge}</td>
+                    <td>${cienciaBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="verDetalhesReport(${report.id})" title="Ver detalhes">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        ${!report.ciente ? 
+                            `<button class="btn btn-sm btn-outline-success" onclick="marcarCienciaRapida(${report.id})" title="Marcar ciência">
+                                <i class="bi bi-check"></i>
+                            </button>` : ''
+                        }
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+    } catch (error) {
+        console.error('Erro ao filtrar reports:', error);
+    }
+}
+
+/**
+ * Ver detalhes de um report
+ */
+async function verDetalhesReport(reportId) {
+    try {
+        const resultado = await API.buscarReports();
+        if (!resultado.sucesso) {
+            throw new Error(resultado.erro);
+        }
+        
+        const report = resultado.dados.find(r => r.id === reportId);
+        if (!report) {
+            throw new Error('Report não encontrado');
+        }
+        
+        reportAtual = report;
+        
+        const dataFormatada = formatarDataFallback(report.created_at);
+        const tipoFormatado = formatarTipoEventualidade(report.tipo_eventualidade);
+        const statusBadge = getStatusBadge(report.status);
+        const cienciaBadge = getCienciaBadge(report.ciente, report.ciente_por_usuario?.nome);
+        
+        const conteudo = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="bi bi-hash"></i> Identificação</h6>
+                    <p><strong>ID:</strong> #${report.id}</p>
+                    <p><strong>Data/Hora:</strong> ${dataFormatada}</p>
+                    <p><strong>Autor:</strong> ${report.autor_nome}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6><i class="bi bi-info-circle"></i> Status</h6>
+                    <p><strong>Status:</strong> ${statusBadge}</p>
+                    <p><strong>Ciência:</strong> ${cienciaBadge}</p>
+                    <p><strong>Prioridade:</strong> <span class="badge bg-secondary">${report.prioridade}</span></p>
+                </div>
+            </div>
+            
+            <hr>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="bi bi-exclamation-triangle"></i> Eventualidade</h6>
+                    <p><strong>Tipo:</strong> ${tipoFormatado}</p>
+                    ${report.protocolo_relacionado ? 
+                        `<p><strong>Protocolo Relacionado:</strong> <span class="badge bg-info">${report.protocolo_relacionado}</span></p>` : 
+                        ''
+                    }
+                </div>
+                <div class="col-md-6">
+                    ${report.ciente ? `
+                        <h6><i class="bi bi-check-circle"></i> Ciência</h6>
+                        <p><strong>Marcado por:</strong> ${report.ciente_por_usuario?.nome || 'N/A'}</p>
+                        <p><strong>Data:</strong> ${formatarDataFallback(report.ciente_em)}</p>
+                    ` : ''}
+                </div>
+            </div>
+            
+            <hr>
+            
+            <h6><i class="bi bi-file-text"></i> Descrição da Eventualidade</h6>
+            <div class="alert alert-light">
+                ${report.descricao}
+            </div>
+            
+            ${report.observacoes_gestao ? `
+                <h6><i class="bi bi-clipboard-check"></i> Observações da Gestão</h6>
+                <div class="alert alert-info">
+                    ${report.observacoes_gestao}
+                </div>
+            ` : ''}
+        `;
+        
+        document.getElementById('detalhesReportContent').innerHTML = conteudo;
+        
+        // Configurar botões do modal
+        const btnCiente = document.getElementById('btnMarcarCiente');
+        const btnStatus = document.getElementById('btnAlterarStatus');
+        
+        if (btnCiente) {
+            btnCiente.style.display = report.ciente ? 'none' : 'inline-block';
+        }
+        if (btnStatus) {
+            btnStatus.style.display = 'inline-block';
+        }
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalDetalhesReport'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Erro ao carregar detalhes do report:', error);
+        alert('Erro ao carregar detalhes do report: ' + error.message);
+    }
+}
+
+/**
+ * Marcar ciência rapidamente
+ */
+async function marcarCienciaRapida(reportId) {
+    if (!confirm('Deseja marcar ciência deste report?')) {
+        return;
+    }
+    
+    try {
+        // Debug: verificar estado do usuário
+        console.log('🔍 Debug currentUser:', currentUser);
+        console.log('🔍 Debug localStorage adminUser:', localStorage.getItem('adminUser'));
+        
+        // Verificar se o usuário está logado
+        if (!currentUser || !currentUser.id) {
+            // Tentar recuperar do localStorage
+            const userData = localStorage.getItem('adminUser');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+                console.log('🔄 Usuário recuperado do localStorage:', currentUser);
+            } else {
+                throw new Error('Usuário não identificado. Faça login novamente.');
+            }
+        }
+        
+        const resultado = await API.marcarReportCiente(reportId, currentUser.id);
+        
+        if (!resultado.sucesso) {
+            throw new Error(resultado.erro);
+        }
+        
+        await carregarReports(); // Recarregar lista
+        
+        // Usar toast se disponível, senão alert
+        if (typeof Utils !== 'undefined' && Utils.showToast) {
+            Utils.showToast('Ciência marcada com sucesso!', 'success');
+        } else {
+            alert('Ciência marcada com sucesso!');
+        }
+        
+    } catch (error) {
+        console.error('Erro ao marcar ciência:', error);
+        
+        // Usar toast se disponível, senão alert
+        if (typeof Utils !== 'undefined' && Utils.showToast) {
+            Utils.showToast('Erro ao marcar ciência: ' + error.message, 'danger');
+        } else {
+            alert('Erro ao marcar ciência: ' + error.message);
+        }
+    }
+}
+
+/**
+ * Mostrar modal de ciência
+ */
+function mostrarModalCiencia() {
+    const modal = new bootstrap.Modal(document.getElementById('modalCiencia'));
+    modal.show();
+}
+
+/**
+ * Confirmar ciência com observações
+ */
+async function confirmarCiencia() {
+    if (!reportAtual) {
+        alert('Nenhum report selecionado');
+        return;
+    }
+    
+    try {
+        // Debug: verificar estado do usuário
+        console.log('🔍 Debug currentUser:', currentUser);
+        
+        // Verificar se o usuário está logado
+        if (!currentUser || !currentUser.id) {
+            // Tentar recuperar do localStorage
+            const userData = localStorage.getItem('adminUser');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+                console.log('🔄 Usuário recuperado do localStorage:', currentUser);
+            } else {
+                throw new Error('Usuário não identificado. Faça login novamente.');
+            }
+        }
+        
+        const observacoes = document.getElementById('observacoesCiencia').value.trim();
+        
+        const resultado = await API.marcarReportCiente(reportAtual.id, currentUser.id, observacoes);
+        
+        if (!resultado.sucesso) {
+            throw new Error(resultado.erro);
+        }
+        
+        // Fechar modais
+        bootstrap.Modal.getInstance(document.getElementById('modalCiencia')).hide();
+        bootstrap.Modal.getInstance(document.getElementById('modalDetalhesReport')).hide();
+        
+        // Limpar campo de observações
+        document.getElementById('observacoesCiencia').value = '';
+        
+        // Recarregar lista
+        await carregarReports();
+        
+        // Usar toast se disponível, senão alert
+        if (typeof Utils !== 'undefined' && Utils.showToast) {
+            Utils.showToast('Ciência marcada com sucesso!', 'success');
+        } else {
+            alert('Ciência marcada com sucesso!');
+        }
+        
+    } catch (error) {
+        console.error('Erro ao marcar ciência:', error);
+        
+        // Usar toast se disponível, senão alert
+        if (typeof Utils !== 'undefined' && Utils.showToast) {
+            Utils.showToast('Erro ao marcar ciência: ' + error.message, 'danger');
+        } else {
+            alert('Erro ao marcar ciência: ' + error.message);
+        }
+    }
+}
+
+/**
+ * Mostrar modal de alteração de status
+ */
+function mostrarModalStatus() {
+    if (reportAtual) {
+        document.getElementById('novoStatus').value = reportAtual.status;
+        document.getElementById('observacoesStatus').value = reportAtual.observacoes_gestao || '';
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalStatus'));
+    modal.show();
+}
+
+/**
+ * Confirmar alteração de status
+ */
+async function confirmarAlteracaoStatus() {
+    if (!reportAtual) {
+        alert('Nenhum report selecionado');
+        return;
+    }
+    
+    const novoStatus = document.getElementById('novoStatus').value;
+    const observacoes = document.getElementById('observacoesStatus').value.trim();
+    
+    if (!novoStatus) {
+        alert('Selecione um status');
+        return;
+    }
+    
+    try {
+        const resultado = await API.atualizarStatusReport(reportAtual.id, novoStatus, observacoes);
+        
+        if (!resultado.sucesso) {
+            throw new Error(resultado.erro);
+        }
+        
+        // Fechar modais
+        bootstrap.Modal.getInstance(document.getElementById('modalStatus')).hide();
+        bootstrap.Modal.getInstance(document.getElementById('modalDetalhesReport')).hide();
+        
+        // Recarregar lista
+        await carregarReports();
+        alert('Status atualizado com sucesso!');
+        
+    } catch (error) {
+        console.error('Erro ao alterar status:', error);
+        alert('Erro ao alterar status: ' + error.message);
+    }
+}
+
+/**
+ * Funções auxiliares para formatação
+ */
+function formatarTipoEventualidade(tipo) {
+    const tipos = {
+        'nao_compareceu': 'Não compareceu',
+        'problema_acesso': 'Problema de acesso',
+        'equipamento_danificado': 'Equipamento danificado',
+        'uso_inadequado': 'Uso inadequado',
+        'outros': 'Outros'
+    };
+    return tipos[tipo] || tipo;
+}
+
+function getStatusBadge(status) {
+    const badges = {
+        'aberto': '<span class="badge bg-warning">Aberto</span>',
+        'em_analise': '<span class="badge bg-info">Em Análise</span>',
+        'resolvido': '<span class="badge bg-success">Resolvido</span>',
+        'arquivado': '<span class="badge bg-secondary">Arquivado</span>'
+    };
+    return badges[status] || `<span class="badge bg-light text-dark">${status}</span>`;
+}
+
+function getCienciaBadge(ciente, nomeUsuario) {
+    if (ciente) {
+        return `<span class="badge bg-success" title="Ciência por: ${nomeUsuario || 'N/A'}">
+                    <i class="bi bi-check"></i> Ciente
+                </span>`;
+    } else {
+        return '<span class="badge bg-warning"><i class="bi bi-clock"></i> Pendente</span>';
+    }
+}
+
 // ==================== GESTÃO DE USUÁRIOS ====================
 
 let usuarioEditando = null;

@@ -418,8 +418,8 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             const tipoEventualidade = document.getElementById('tipoEventualidade').value;
-            const protocoloRelacionado = document.getElementById('protocoloRelacionado').value;
-            const descricaoEventualidade = document.getElementById('descricaoEventualidade').value;
+            const protocoloRelacionado = document.getElementById('protocoloRelacionado').value.trim();
+            const descricaoEventualidade = document.getElementById('descricaoEventualidade').value.trim();
             const senhaReport = document.getElementById('senhaReport').value;
             
             // Validar campos obrigatórios
@@ -428,35 +428,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Validar senha (você pode personalizar esta validação)
-            if (senhaReport !== 'patrimonio123') { // Senha simplificada para teste
-                Utils.showToast('Senha de autorização inválida', 'danger');
-                return;
-            }
-            
             try {
-                // Buscar reserva se protocolo foi informado
-                let reservaId = null;
-                if (protocoloRelacionado) {
-                    const resultadoReserva = await API.buscarReservaPorProtocolo(protocoloRelacionado);
-                    if (resultadoReserva.sucesso && resultadoReserva.dados.length > 0) {
-                        reservaId = resultadoReserva.dados[0].id;
-                    }
+                // Verificar senha do usuário portaria
+                const resultadoAuth = await API.verificarCredenciais('portaria', senhaReport);
+                if (!resultadoAuth.sucesso) {
+                    Utils.showToast('Senha de autorização inválida', 'danger');
+                    return;
                 }
                 
+                // Preparar dados do report
                 const dadosReport = {
-                    reservaId: reservaId,
-                    tipoReport: tipoEventualidade,
+                    tipo_eventualidade: tipoEventualidade,
+                    protocolo_relacionado: protocoloRelacionado || null,
                     descricao: descricaoEventualidade,
-                    reportadoPor: 'Divisão de Proteção Patrimonial'
+                    autor_nome: 'Divisão de Proteção Patrimonial',
+                    autor_ip: null, // Pode ser capturado no backend se necessário
+                    prioridade: tipoEventualidade === 'equipamento_danificado' ? 'alta' : 'normal'
                 };
                 
-                const resultado = await API.criarReportPatrimonial(dadosReport);
+                // Enviar report
+                const resultado = await API.criarReport(dadosReport);
                 
                 if (resultado.sucesso) {
-                    Utils.showToast('Report enviado com sucesso!', 'success');
+                    Utils.showToast('Report enviado com sucesso! Protocolo: #' + resultado.dados.id, 'success');
                     formReport.reset();
                     bootstrap.Modal.getInstance(document.getElementById('modalReport')).hide();
+                    
+                    // Log para auditoria
+                    console.log('Report criado:', resultado.dados);
                 } else {
                     Utils.showToast('Erro ao enviar report: ' + resultado.erro, 'danger');
                 }

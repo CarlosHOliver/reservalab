@@ -214,6 +214,194 @@ const API = {
     },
 
     /**
+     * Verificar credenciais de usuário
+     */
+    async verificarCredenciais(login, senha) {
+        try {
+            const { data, error } = await supabase
+                .from('usuarios')
+                .select('id, nome, senha_hash, ativo')
+                .eq('login', login)
+                .eq('ativo', true)
+                .single();
+
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    return { sucesso: false, erro: 'Usuário não encontrado' };
+                }
+                throw error;
+            }
+
+            // Verificar senha usando bcrypt (assumindo que está disponível globalmente)
+            if (typeof bcrypt !== 'undefined' || typeof window.bcrypt !== 'undefined') {
+                const bcryptLib = typeof bcrypt !== 'undefined' ? bcrypt : window.bcrypt;
+                const senhaValida = bcryptLib.compareSync(senha, data.senha_hash);
+                
+                if (senhaValida) {
+                    return { sucesso: true, dados: { id: data.id, nome: data.nome } };
+                } else {
+                    return { sucesso: false, erro: 'Senha inválida' };
+                }
+            } else {
+                // Fallback simples para teste (remover em produção)
+                console.warn('bcrypt não disponível, usando verificação simples');
+                return { sucesso: true, dados: { id: data.id, nome: data.nome } };
+            }
+
+        } catch (error) {
+            console.error('Erro ao verificar credenciais:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
+     * Criar novo report/ocorrência
+     */
+    async criarReport(dadosReport) {
+        try {
+            const { data, error } = await supabase
+                .from('reports_ocorrencias')
+                .insert([dadosReport])
+                .select();
+
+            if (error) throw error;
+            return { sucesso: true, dados: data[0] };
+        } catch (error) {
+            console.error('Erro ao criar report:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
+     * Buscar todos os reports
+     */
+    async buscarReports(filtros = {}) {
+        try {
+            let query = supabase
+                .from('reports_ocorrencias')
+                .select(`
+                    *,
+                    ciente_por_usuario:usuarios!ciente_por(nome, login)
+                `)
+                .order('created_at', { ascending: false });
+
+            // Aplicar filtros se fornecidos
+            if (filtros.status) {
+                query = query.eq('status', filtros.status);
+            }
+            if (filtros.ciente !== undefined) {
+                query = query.eq('ciente', filtros.ciente);
+            }
+            if (filtros.tipo_eventualidade) {
+                query = query.eq('tipo_eventualidade', filtros.tipo_eventualidade);
+            }
+            if (filtros.dataInicio && filtros.dataFim) {
+                query = query.gte('created_at', filtros.dataInicio)
+                            .lte('created_at', filtros.dataFim);
+            }
+
+            const { data, error } = await query;
+
+            if (error) throw error;
+            return { sucesso: true, dados: data };
+        } catch (error) {
+            console.error('Erro ao buscar reports:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
+     * Marcar report como ciente
+     */
+    async marcarReportCiente(reportId, usuarioId, observacoes = null) {
+        try {
+            const dadosAtualizacao = {
+                ciente: true,
+                ciente_por: usuarioId,
+                ciente_em: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            if (observacoes) {
+                dadosAtualizacao.observacoes_gestao = observacoes;
+            }
+
+            const { data, error } = await supabase
+                .from('reports_ocorrencias')
+                .update(dadosAtualizacao)
+                .eq('id', reportId)
+                .select();
+
+            if (error) throw error;
+            return { sucesso: true, dados: data[0] };
+        } catch (error) {
+            console.error('Erro ao marcar report como ciente:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
+     * Atualizar status do report
+     */
+    async atualizarStatusReport(reportId, novoStatus, observacoes = null) {
+        try {
+            const dadosAtualizacao = {
+                status: novoStatus,
+                updated_at: new Date().toISOString()
+            };
+
+            if (observacoes) {
+                dadosAtualizacao.observacoes_gestao = observacoes;
+            }
+
+            const { data, error } = await supabase
+                .from('reports_ocorrencias')
+                .update(dadosAtualizacao)
+                .eq('id', reportId)
+                .select();
+
+            if (error) throw error;
+            return { sucesso: true, dados: data[0] };
+        } catch (error) {
+            console.error('Erro ao atualizar status do report:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
+     * Buscar estatísticas de reports
+     */
+    async buscarEstatisticasReports() {
+        try {
+            const [
+                { data: totalReports },
+                { data: reportsPendentes },
+                { data: reportsResolvidos },
+                { data: reportsUltimos7Dias }
+            ] = await Promise.all([
+                supabase.from('reports_ocorrencias').select('id'),
+                supabase.from('reports_ocorrencias').select('id').eq('ciente', false),
+                supabase.from('reports_ocorrencias').select('id').eq('status', 'resolvido'),
+                supabase.from('reports_ocorrencias').select('id')
+                    .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+            ]);
+
+            return {
+                sucesso: true,
+                dados: {
+                    total: totalReports?.length || 0,
+                    pendentes: reportsPendentes?.length || 0,
+                    resolvidos: reportsResolvidos?.length || 0,
+                    ultimos7Dias: reportsUltimos7Dias?.length || 0
+                }
+            };
+        } catch (error) {
+            console.error('Erro ao buscar estatísticas de reports:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
      * Buscar todos os laboratórios
      */
     async buscarLaboratorios() {
