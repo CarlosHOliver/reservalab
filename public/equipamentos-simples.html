@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equipamentos Simples - ReservaLAB</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>🔧 Equipamentos - Versão Simples</h1>
+        
+        <div class="alert alert-info">
+            <strong>Versão simplificada da página de equipamentos para teste</strong>
+        </div>
+        
+        <button class="btn btn-primary mb-3" onclick="carregarEquipamentos()">
+            <i class="bi bi-refresh"></i> Carregar Equipamentos
+        </button>
+        
+        <!-- Loading -->
+        <div id="loading" class="text-center py-5" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-2">Carregando equipamentos...</p>
+        </div>
+        
+        <!-- Erro -->
+        <div id="erro" class="alert alert-danger" style="display: none;">
+            <!-- Mensagem de erro aparecerá aqui -->
+        </div>
+        
+        <!-- Tabela de Equipamentos -->
+        <div id="tabelaContainer" style="display: none;">
+            <h4>Equipamentos Encontrados: <span id="contador">0</span></h4>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Nome</th>
+                            <th>Patrimônio</th>
+                            <th>Bloco</th>
+                            <th>Local</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="equipamentosBody">
+                        <!-- Equipamentos aparecerão aqui -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Debug Info -->
+        <div class="mt-4">
+            <h5>Debug Info:</h5>
+            <div id="debugInfo" class="bg-light p-3" style="font-family: monospace; font-size: 12px;">
+                <!-- Info de debug aparecerá aqui -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/api.js"></script>
+    
+    <script>
+        function addDebug(message) {
+            const debugDiv = document.getElementById('debugInfo');
+            const timestamp = new Date().toLocaleTimeString();
+            debugDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            console.log(message);
+        }
+        
+        function mostrarLoading(mostrar) {
+            document.getElementById('loading').style.display = mostrar ? 'block' : 'none';
+            document.getElementById('tabelaContainer').style.display = mostrar ? 'none' : 'block';
+            document.getElementById('erro').style.display = 'none';
+        }
+        
+        function mostrarErro(mensagem) {
+            document.getElementById('erro').innerHTML = mensagem;
+            document.getElementById('erro').style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('tabelaContainer').style.display = 'none';
+        }
+        
+        async function carregarEquipamentos() {
+            try {
+                addDebug('🔄 Iniciando carregamento de equipamentos...');
+                mostrarLoading(true);
+                
+                // Verificar se API está disponível
+                if (typeof API === 'undefined') {
+                    throw new Error('API não está disponível');
+                }
+                
+                if (typeof API.buscarEquipamentos !== 'function') {
+                    throw new Error('Função API.buscarEquipamentos não encontrada');
+                }
+                
+                addDebug('📡 Chamando API.buscarEquipamentos()...');
+                const resultado = await API.buscarEquipamentos();
+                
+                addDebug('📦 Resultado recebido:');
+                addDebug(JSON.stringify(resultado, null, 2));
+                
+                if (!resultado.sucesso) {
+                    throw new Error(resultado.erro || 'Erro desconhecido na API');
+                }
+                
+                const equipamentos = resultado.dados || [];
+                addDebug(`✅ ${equipamentos.length} equipamentos carregados`);
+                
+                // Renderizar tabela
+                renderizarEquipamentos(equipamentos);
+                
+                mostrarLoading(false);
+                
+            } catch (error) {
+                addDebug(`❌ Erro: ${error.message}`);
+                console.error('Erro completo:', error);
+                mostrarErro(`Erro ao carregar equipamentos: ${error.message}`);
+            }
+        }
+        
+        function renderizarEquipamentos(equipamentos) {
+            const tbody = document.getElementById('equipamentosBody');
+            const contador = document.getElementById('contador');
+            
+            contador.textContent = equipamentos.length;
+            
+            if (equipamentos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Nenhum equipamento encontrado</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            equipamentos.forEach(equip => {
+                const status = equip.status || 'desconhecido';
+                const statusClass = status === 'disponivel' ? 'success' : status === 'em_manutencao' ? 'warning' : 'secondary';
+                
+                html += `
+                    <tr>
+                        <td><strong>${equip.nome || 'N/A'}</strong></td>
+                        <td>${equip.patrimonio || 'N/A'}</td>
+                        <td>${equip.blocos?.nome || 'N/A'}</td>
+                        <td>${equip.local || 'N/A'}</td>
+                        <td><span class="badge bg-${statusClass}">${status}</span></td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+            addDebug('🎨 Tabela renderizada com sucesso');
+        }
+        
+        // Auto verificação quando carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            addDebug('🚀 Página carregada');
+            
+            setTimeout(() => {
+                addDebug('🔍 Verificando dependências...');
+                addDebug(`Bootstrap: ${typeof bootstrap !== 'undefined' ? '✅' : '❌'}`);
+                addDebug(`Supabase: ${typeof supabase !== 'undefined' ? '✅' : '❌'}`);
+                addDebug(`API: ${typeof API !== 'undefined' ? '✅' : '❌'}`);
+                addDebug(`Utils: ${typeof Utils !== 'undefined' ? '✅' : '❌'}`);
+                
+                if (typeof API !== 'undefined' && typeof API.buscarEquipamentos === 'function') {
+                    addDebug('🎯 Tudo pronto! Clique em "Carregar Equipamentos" para testar.');
+                } else {
+                    addDebug('❌ Dependências faltando. Verifique os scripts.');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

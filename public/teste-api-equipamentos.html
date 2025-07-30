@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste API Equipamentos</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .console { background: #000; color: #0f0; padding: 15px; margin: 10px 0; font-family: monospace; height: 300px; overflow-y: auto; }
+        button { padding: 10px 20px; margin: 5px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Teste Direto da API de Equipamentos</h1>
+    
+    <button onclick="testarConfig()">1. Testar Config</button>
+    <button onclick="testarSupabase()">2. Testar Supabase</button>
+    <button onclick="testarAPI()">3. Testar API</button>
+    <button onclick="testarEquipamentos()">4. Testar Equipamentos</button>
+    <button onclick="limparConsole()">Limpar</button>
+    
+    <div id="console" class="console"></div>
+
+    <!-- Scripts mínimos -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/api.js"></script>
+    
+    <script>
+        function log(msg) {
+            const console_div = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            console_div.innerHTML += `[${timestamp}] ${msg}\n`;
+            console_div.scrollTop = console_div.scrollHeight;
+            console.log(msg);
+        }
+        
+        function limparConsole() {
+            document.getElementById('console').innerHTML = '';
+        }
+        
+        function testarConfig() {
+            log('=== TESTE DE CONFIGURAÇÃO ===');
+            try {
+                if (typeof CONFIG === 'undefined') {
+                    log('❌ CONFIG não definido');
+                    return;
+                }
+                log('✅ CONFIG carregado:');
+                log(`  SUPABASE_URL: ${CONFIG.SUPABASE_URL ? '✅ Definido' : '❌ Não definido'}`);
+                log(`  SUPABASE_ANON_KEY: ${CONFIG.SUPABASE_ANON_KEY ? '✅ Definido' : '❌ Não definido'}`);
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`);
+            }
+        }
+        
+        function testarSupabase() {
+            log('=== TESTE DO SUPABASE ===');
+            try {
+                if (typeof supabase === 'undefined') {
+                    log('❌ Supabase library não carregada');
+                    return;
+                }
+                log('✅ Supabase library carregada');
+                
+                if (typeof CONFIG === 'undefined') {
+                    log('❌ CONFIG não disponível');
+                    return;
+                }
+                
+                // Tentar criar cliente
+                const client = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+                log('✅ Cliente Supabase criado com sucesso');
+                
+                window.testClient = client; // Para debug
+                
+            } catch (error) {
+                log(`❌ Erro ao criar cliente: ${error.message}`);
+            }
+        }
+        
+        function testarAPI() {
+            log('=== TESTE DA API ===');
+            try {
+                if (typeof API === 'undefined') {
+                    log('❌ API não carregada');
+                    return;
+                }
+                log('✅ API carregada');
+                
+                const funcoes = Object.keys(API);
+                log(`Funções disponíveis: ${funcoes.join(', ')}`);
+                
+                if (typeof API.buscarEquipamentos !== 'function') {
+                    log('❌ API.buscarEquipamentos não é uma função');
+                    return;
+                }
+                log('✅ API.buscarEquipamentos disponível');
+                
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`);
+            }
+        }
+        
+        async function testarEquipamentos() {
+            log('=== TESTE DE EQUIPAMENTOS ===');
+            try {
+                if (typeof API === 'undefined' || typeof API.buscarEquipamentos !== 'function') {
+                    log('❌ API não disponível');
+                    return;
+                }
+                
+                log('📡 Chamando API.buscarEquipamentos()...');
+                const resultado = await API.buscarEquipamentos();
+                
+                log('📦 Resposta recebida:');
+                log(`  Tipo: ${typeof resultado}`);
+                log(`  Sucesso: ${resultado?.sucesso}`);
+                log(`  Dados: ${Array.isArray(resultado?.dados) ? resultado.dados.length + ' equipamentos' : 'Não é array'}`);
+                
+                if (resultado?.sucesso && resultado?.dados) {
+                    log('📋 Primeiros equipamentos:');
+                    resultado.dados.slice(0, 3).forEach((equip, index) => {
+                        log(`  ${index + 1}. ${equip.nome} (${equip.patrimonio})`);
+                    });
+                }
+                
+                if (resultado?.erro) {
+                    log(`❌ Erro da API: ${resultado.erro}`);
+                }
+                
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`);
+                log(`Stack: ${error.stack}`);
+            }
+        }
+        
+        // Auto-teste ao carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página carregada - iniciando testes...');
+            setTimeout(() => {
+                testarConfig();
+                setTimeout(() => {
+                    testarSupabase();
+                    setTimeout(() => {
+                        testarAPI();
+                    }, 500);
+                }, 500);
+            }, 100);
+        });
+    </script>
+</body>
+</html>
