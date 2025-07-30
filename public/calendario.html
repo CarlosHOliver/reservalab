@@ -13,6 +13,11 @@
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="assets/css/style.css" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <!-- Luxon (para manipulação de datas com timezone) -->
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
 </head>
 <body>
     <!-- Header -->
@@ -23,27 +28,49 @@
                     <div class="d-flex align-items-center">
                         <img src="assets/images/logo-ufgd.png" alt="UFGD" class="me-3" style="height: 50px;">
                         <div>
-                            <h1 class="h4 mb-0">ReservaLAB - Calendário</h1>
-                            <small class="opacity-75">Visualização das Reservas Aprovadas</small>
+                            <h1 class="h4 mb-0">ReservaLAB</h1>
+                            <small class="opacity-75">Sistema de Reservas de Laboratórios e Equipamentos</small>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-4 text-end">
-                    <div class="d-flex gap-2 justify-content-end">
-                        <button class="btn btn-outline-light btn-sm" onclick="window.location.href='index.html'">
-                            <i class="bi bi-house"></i> Início
+                    <button class="btn btn-outline-light btn-sm" onclick="abrirBuscaReserva()">
+                        <i class="bi bi-search"></i> Buscar Reserva
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navegação Principal -->
+    <section class="nav-principal py-3">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12">
+                    <div class="d-flex flex-wrap gap-2 justify-content-center">
+                        <button class="btn btn-outline-primary btn-sm" onclick="window.location.href='index.html'">
+                            <i class="bi bi-house-fill"></i> Nova Reserva
                         </button>
-                        <button class="btn btn-outline-light btn-sm" onclick="window.location.href='equipamentos.html'">
+                        <button class="btn btn-primary btn-sm" onclick="window.location.href='calendario.html'">
+                            <i class="bi bi-calendar3"></i> Calendário
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="window.location.href='laboratorios.html'">
+                            <i class="bi bi-building"></i> Laboratórios
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="window.location.href='equipamentos.html'">
                             <i class="bi bi-tools"></i> Equipamentos
                         </button>
-                        <button class="btn btn-outline-light btn-sm" onclick="window.location.href='patrimonial.html'">
-                            <i class="bi bi-shield-check"></i> Patrimonial
+                        <button class="btn btn-outline-secondary btn-sm" onclick="window.location.href='admin/'">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm" onclick="window.location.href='patrimonial.html'">
+                            <i class="bi bi-archive"></i> Patrimonial
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-    </header>
+    </section>
 
     <!-- Main Content -->
     <main class="container my-5">
@@ -204,6 +231,7 @@
     <script src="assets/js/config.js"></script>
     <script src="assets/js/utils.js"></script>
     <script src="assets/js/api.js"></script>
+    <script src="assets/js/busca.js"></script>
     <script src="assets/js/calendario.js"></script>
 </body>
 </html>
