@@ -3,10 +3,5 @@
   "outputDirectory": "public",
   "installCommand": "npm install",
   "cleanUrls": true,
-  "trailingSlash": false,
-  "functions": {
-    "app": {
-      "runtime": "@vercel/static"
-    }
-  }
+  "trailingSlash": false
 }
