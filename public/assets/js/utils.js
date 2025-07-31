@@ -275,10 +275,10 @@ if (typeof DateUtils === 'undefined') {
     },
 
     /**
-     * Obtém a data mínima para reservas (hoje, formato ISO)
+     * Obtém a data mínima para reservas (hoje + 2 dias, formato ISO)
      */
     getDataMinima() {
-        return this.getCurrentCuiabaDate().toISODate();
+        return this.getCurrentCuiabaDate().plus({ days: 2 }).toISODate();
     },
 
     /**

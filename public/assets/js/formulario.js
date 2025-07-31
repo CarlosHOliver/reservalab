@@ -234,7 +234,8 @@ function configurarEventos() {
     document.getElementById('recorrenciaFim').addEventListener('change', validarRecorrenciaFim);
     document.getElementById('recorrenciaFim').addEventListener('blur', validarRecorrenciaFim);
     
-    // Eventos de validação de horário
+        // Eventos de validação de horário
+    document.getElementById('dataReserva').addEventListener('change', validarDataReserva);
     document.getElementById('dataReserva').addEventListener('change', validarConflitos);
     document.getElementById('horaInicio').addEventListener('change', validarHorarios);
     document.getElementById('horaFim').addEventListener('change', validarHorarios);
@@ -376,10 +377,8 @@ function toggleRecorrencia() {
         dataFim.disabled = false;
         dataFim.setAttribute('required', 'required');
         
-        // Definir data mínima como amanhã
-        const amanha = new Date();
-        amanha.setDate(amanha.getDate() + 1);
-        dataFim.min = amanha.toISOString().split('T')[0];
+        // Definir data mínima usando a mesma regra (hoje + 2 dias)
+        dataFim.min = DateUtils.getDataMinima();
         
         // Definir data máxima (2 meses à frente)
         dataFim.max = DateUtils.getDataMaxima();
@@ -408,6 +407,26 @@ function validarRecorrenciaFim() {
         return false;
     } else {
         Utils.removerErro('recorrenciaFim');
+        return true;
+    }
+}
+
+/**
+ * Validar data de reserva com antecedência mínima
+ */
+function validarDataReserva() {
+    const dataReserva = document.getElementById('dataReserva').value;
+    
+    if (!dataReserva) return;
+    
+    const dataMinima = DateUtils.getDataMinima();
+    
+    if (dataReserva < dataMinima) {
+        const dataFormated = FormularioUtils.formatarDataSegura(dataMinima);
+        Utils.adicionarErro('dataReserva', `A data deve ter antecedência mínima de 2 dias. Data mínima: ${dataFormated}`);
+        return false;
+    } else {
+        Utils.removerErro('dataReserva');
         return true;
     }
 }
@@ -644,9 +663,18 @@ async function submeterFormulario(event) {
     // Validações específicas
     if (!validarEmail()) return;
     if (!validarHorarios()) return;
+    
+    // Validar antecedência mínima de 2 dias
+    const dataReservaInput = document.getElementById("dataReserva").value;
+    if (dataReservaInput) {
+        const dataMinima = DateUtils.getDataMinima();
+        if (dataReservaInput < dataMinima) {
+            Utils.showToast(SISTEMA_CONFIG.mensagens.erro.antecedenciaMinima, 'warning');
+            return;
+        }
+    }
 
     // Definir datas formatadas para envio
-    const dataReservaInput = document.getElementById("dataReserva").value;
     const horaInicioInput = document.getElementById("horaInicio").value;
     const horaFimInput = document.getElementById("horaFim").value;
     

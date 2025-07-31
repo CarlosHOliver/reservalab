@@ -95,6 +95,22 @@ var SISTEMA_CONFIG = {
         assinatura: 'Sistema ReservaLAB - FAEN/UFGD'
     },
     
+    // Mensagens do sistema
+    mensagens: {
+        erro: {
+            emailInvalido: 'Por favor, use um e-mail institucional (@ufgd.edu.br ou @academico.ufgd.edu.br)',
+            camposObrigatorios: 'Por favor, preencha todos os campos obrigatórios',
+            conflitosDetectados: 'Há conflitos de horário. Escolha um horário diferente.',
+            semRecursosSelecionados: 'Selecione pelo menos um laboratório ou equipamento',
+            antecedenciaMinima: 'A data da reserva deve ter antecedência mínima de 2 dias'
+        },
+        sucesso: {
+            reservaCriada: 'Reserva criada com sucesso!',
+            reservaAprovada: 'Reserva aprovada com sucesso!',
+            reservaRejeitada: 'Reserva rejeitada com sucesso!'
+        }
+    },
+    
     // URLs e endpoints
     urls: {
         sistema: 'https://reservalab.vercel.app',
