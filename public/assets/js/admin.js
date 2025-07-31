@@ -718,9 +718,9 @@ async function loadReservas() {
             .from('reservas')
             .select(`
                 *,
-                laboratorios (nome),
+                laboratorios (nome, blocos (nome)),
                 reserva_equipamentos (
-                    equipamentos (nome)
+                    equipamentos (nome, blocos (nome))
                 )
             `)
             .order('created_at', { ascending: false })
@@ -731,11 +731,20 @@ async function loadReservas() {
         const tbody = document.getElementById('tabelaReservas');
         
         if (!reservas || reservas.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">Nenhuma reserva encontrada</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">Nenhuma reserva encontrada</td></tr>';
             return;
         }
         
-        tbody.innerHTML = reservas.map(reserva => `
+        tbody.innerHTML = reservas.map(reserva => {
+            // Determinar o bloco do recurso principal
+            let blocoNome = '';
+            if (reserva.laboratorios?.blocos?.nome) {
+                blocoNome = reserva.laboratorios.blocos.nome;
+            } else if (reserva.reserva_equipamentos?.length > 0 && reserva.reserva_equipamentos[0]?.equipamentos?.blocos?.nome) {
+                blocoNome = reserva.reserva_equipamentos[0].equipamentos.blocos.nome;
+            }
+            
+            return `
             <tr>
                 <td>${reserva.protocolo}</td>
                 <td>
@@ -752,6 +761,9 @@ async function loadReservas() {
                         `<small class="text-muted">${reserva.reserva_equipamentos.length} equipamento(s)</small>` : ''}
                 </td>
                 <td>
+                    <span class="badge bg-info text-dark">${blocoNome || 'N/A'}</span>
+                </td>
+                <td>
                     <span class="badge ${getStatusBadgeClass(reserva.status)}">
                         ${getStatusTextReserva(reserva.status)}
                     </span>
@@ -762,7 +774,8 @@ async function loadReservas() {
                     </button>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
         
         // Controlar visibilidade dos elementos baseado nas permissões
         setTimeout(() => controlarVisibilidadeElementos(), 100);
