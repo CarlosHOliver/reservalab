@@ -1191,17 +1191,10 @@ function mostrarResultadoBusca(reservas) {
         }
     }
     
-    // Função simples para download ICS
-    function downloadICS(protocolo) {
-        console.log('Download ICS solicitado para protocolo:', protocolo);
-        alert('Funcionalidade de download de calendário em desenvolvimento');
-    }
-    
     // Atribuir às variáveis globais IMEDIATAMENTE
     window.abrirBuscaReserva = abrirBuscaReservaGlobal;
     window.buscarReserva = buscarReservaGlobal;
     window.verificarAcompanhamento = verificarAcompanhamentoGlobal;
-    window.downloadICS = downloadICS;
     
     console.log('Funções globais definidas imediatamente');
 })();

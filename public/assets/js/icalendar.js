@@ -33,9 +33,50 @@ const ICalendarUtils = {
                 }
             }
 
-            // Criar datas no formato UTC
-            const dataReserva = new Date(reserva.data_reserva + 'T' + reserva.hora_inicio);
-            const dataFim = new Date(reserva.data_reserva + 'T' + reserva.hora_fim);
+            // Criar datas no formato UTC - com tratamento robusto
+            let dataReserva, dataFim;
+            
+            try {
+                // Normalizar horários - extrair apenas HH:MM se necessário
+                let horaInicio = reserva.hora_inicio;
+                let horaFim = reserva.hora_fim;
+                
+                // Se hora contém timestamp completo, extrair apenas hora
+                if (typeof horaInicio === 'string' && horaInicio.includes('T')) {
+                    horaInicio = horaInicio.split('T')[1].substring(0, 5);
+                } else if (typeof horaInicio === 'string' && horaInicio.includes(':')) {
+                    // Se tem segundos, remover
+                    horaInicio = horaInicio.substring(0, 5);
+                }
+                
+                if (typeof horaFim === 'string' && horaFim.includes('T')) {
+                    horaFim = horaFim.split('T')[1].substring(0, 5);
+                } else if (typeof horaFim === 'string' && horaFim.includes(':')) {
+                    // Se tem segundos, remover
+                    horaFim = horaFim.substring(0, 5);
+                }
+                
+                // Tentar criar datas
+                const dataInicioStr = reserva.data_reserva + 'T' + horaInicio + ':00';
+                const dataFimStr = reserva.data_reserva + 'T' + horaFim + ':00';
+                
+                dataReserva = new Date(dataInicioStr);
+                dataFim = new Date(dataFimStr);
+                
+                // Verificar se as datas são válidas
+                if (isNaN(dataReserva.getTime()) || isNaN(dataFim.getTime())) {
+                    throw new Error(`Datas inválidas: ${dataInicioStr} ou ${dataFimStr}`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao criar objetos Date:', error);
+                console.error('❌ Dados da reserva:', { 
+                    data_reserva: reserva.data_reserva, 
+                    hora_inicio: reserva.hora_inicio, 
+                    hora_fim: reserva.hora_fim 
+                });
+                throw new Error(`Erro ao processar datas da reserva: ${error.message}`);
+            }
             
             // Ajustar para fuso horário de Cuiabá (UTC-4)
             dataReserva.setHours(dataReserva.getHours() + 4);

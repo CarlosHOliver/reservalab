@@ -12,7 +12,16 @@ console.log('🔍 [BuscaGlobal] Carregando módulo...');
 function abrirBuscaReserva() {
     console.log('🔍 [BuscaGlobal] abrirBuscaReserva chamada');
     
+    // Implementação será aqui
+}
+
+/**
+ * Abrir modal de busca de reserva
+ */
+function abrirBuscaReserva() {
     try {
+        console.log('🔍 [BuscaGlobal] Abrindo modal de busca');
+        
         // Verificar se Bootstrap está disponível
         if (typeof bootstrap === 'undefined') {
             console.error('🔍 [BuscaGlobal] Bootstrap não carregado');
@@ -419,7 +428,26 @@ function downloadICS(protocolo) {
     try {
         // Verificar se ICalendarUtils está disponível (do arquivo icalendar.js)
         if (typeof ICalendarUtils !== 'undefined' && typeof ICalendarUtils.downloadICS === 'function') {
-            ICalendarUtils.downloadICS(protocolo);
+            console.log('✅ ICalendarUtils disponível, buscando dados da reserva...');
+            
+            // Buscar dados completos da reserva usando a API
+            API.buscarReservaPorProtocolo(protocolo)
+                .then(resultado => {
+                    if (resultado.sucesso && resultado.dados.length > 0) {
+                        const reserva = resultado.dados[0]; // Primeira reserva (pode ser recorrente)
+                        console.log('📋 Dados da reserva para ICS:', reserva);
+                        
+                        // Passar o objeto da reserva completo, não apenas o protocolo
+                        ICalendarUtils.downloadICS(reserva);
+                    } else {
+                        console.error('❌ Reserva não encontrada:', resultado.erro);
+                        alert('Reserva não encontrada para gerar o calendário.');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Erro ao buscar reserva:', error);
+                    alert('Erro ao buscar dados da reserva.');
+                });
         } else {
             // Fallback simples se ICalendarUtils não estiver disponível
             console.warn('🔍 [BuscaGlobal] ICalendarUtils não disponível, usando fallback');
