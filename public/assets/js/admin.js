@@ -1449,6 +1449,18 @@ async function loadEquipamentosAsync() {
 
         console.log('✅ Equipamentos carregados:', equipamentos);
         
+        // Debug: verificar status dos equipamentos
+        if (equipamentos && equipamentos.length > 0) {
+            const statusUnicos = [...new Set(equipamentos.map(e => e.status))];
+            console.log('📊 Status únicos encontrados nos equipamentos:', statusUnicos);
+            
+            // Verificar equipamentos com status problemático
+            const equipamentosProblematicos = equipamentos.filter(e => !['disponivel', 'em_manutencao', 'inativo', 'ocupado', 'reservado'].includes(e.status));
+            if (equipamentosProblematicos.length > 0) {
+                console.warn('⚠️ Equipamentos com status desconhecido:', equipamentosProblematicos);
+            }
+        }
+        
         const tbody = document.getElementById('tabelaEquipamentos');
         
         if (!tbody) {
@@ -1536,7 +1548,11 @@ function getStatusColor(status) {
         case 'disponivel': return 'bg-success';
         case 'em_manutencao': return 'bg-warning';
         case 'inativo': return 'bg-danger';
-        default: return 'bg-secondary';
+        case 'ocupado': return 'bg-info';
+        case 'reservado': return 'bg-primary';
+        default: 
+            console.warn('Status desconhecido encontrado:', status);
+            return 'bg-secondary';
     }
 }
 
@@ -1545,7 +1561,11 @@ function getStatusIcon(status) {
         case 'disponivel': return 'bi-check-circle';
         case 'em_manutencao': return 'bi-tools';
         case 'inativo': return 'bi-x-circle';
-        default: return 'bi-question-circle';
+        case 'ocupado': return 'bi-person-fill';
+        case 'reservado': return 'bi-calendar-check';
+        default: 
+            console.warn('Status desconhecido encontrado:', status);
+            return 'bi-question-circle';
     }
 }
 
@@ -1554,7 +1574,11 @@ function getStatusText(status) {
         case 'disponivel': return 'Disponível';
         case 'em_manutencao': return 'Em Manutenção';
         case 'inativo': return 'Inativo';
-        default: return 'Indefinido';
+        case 'ocupado': return 'Ocupado';
+        case 'reservado': return 'Reservado';
+        default: 
+            console.warn('Status desconhecido encontrado:', status);
+            return status ? `${status} (desconhecido)` : 'Indefinido';
     }
 }
 
@@ -3166,17 +3190,29 @@ async function excluirEquipamento(id, nome, patrimonio) {
         const btnConfirmar = document.getElementById('btnConfirmarExclusao');
         btnConfirmar.onclick = async () => {
             try {
-                // Verificar se há reservas associadas
-                const { data: reservas, error: errorReservas } = await supabase
-                    .from('reservas')
-                    .select('id')
+                // Verificar se há reservas associadas através da tabela reserva_equipamentos
+                const { data: reservasEquipamentos, error: errorReservas } = await supabase
+                    .from('reserva_equipamentos')
+                    .select(`
+                        reserva_id,
+                        reservas!inner(
+                            id,
+                            protocolo,
+                            status,
+                            data_reserva
+                        )
+                    `)
                     .eq('equipamento_id', id)
                     .limit(1);
 
-                if (errorReservas) throw errorReservas;
+                if (errorReservas) {
+                    console.error('Erro ao verificar reservas:', errorReservas);
+                    throw errorReservas;
+                }
 
-                if (reservas && reservas.length > 0) {
+                if (reservasEquipamentos && reservasEquipamentos.length > 0) {
                     alert('Não é possível excluir este equipamento pois existem reservas associadas a ele.');
+                    console.log('Reservas encontradas:', reservasEquipamentos);
                     return;
                 }
 
