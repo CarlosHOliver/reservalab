@@ -336,10 +336,10 @@ async function carregarEquipamentos() {
         let html = '';
         resultado.dados.forEach(equipamento => {
             const necessitaAcompanhamento = equipamento.necessita_acompanhamento ? 
-                '<small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Necessita acompanhamento</small>' : '';
+                '<br><small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Necessita acompanhamento</small>' : '';
             
             html += `
-                <div class="form-check">
+                <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" value="${equipamento.id}" 
                            id="eq_${equipamento.id}" onchange="verificarAcompanhamento()">
                     <label class="form-check-label" for="eq_${equipamento.id}">
@@ -467,26 +467,41 @@ async function verificarAcompanhamento() {
     
     let necessitaAcompanhamento = false;
     
-    // Verificar laboratório (assumindo que alguns podem necessitar)
-    // Esta lógica pode ser expandida conforme necessário
+    // Verificar laboratório selecionado
+    if (laboratorioId) {
+        try {
+            const resultado = await API.buscarLaboratorioPorId(laboratorioId);
+            if (resultado.sucesso && resultado.dados && resultado.dados.necessita_acompanhamento) {
+                console.log('🏫 Laboratório necessita acompanhamento');
+                necessitaAcompanhamento = true;
+            }
+        } catch (error) {
+            console.error('Erro ao verificar laboratório:', error);
+        }
+    }
     
     // Verificar equipamentos
     for (const checkbox of equipamentosSelecionados) {
         const label = document.querySelector(`label[for="${checkbox.id}"]`);
+        
         if (label && label.innerHTML.includes('Necessita acompanhamento')) {
+            console.log('⚠️ Equipamento necessita acompanhamento:', checkbox.value);
             necessitaAcompanhamento = true;
             break;
         }
     }
     
     if (necessitaAcompanhamento) {
+        console.log('👨‍🏫 Mostrando campo do professor acompanhante');
         professorContainer.style.display = 'block';
         professorInput.setAttribute('required', 'required');
     } else {
         professorContainer.style.display = 'none';
         professorInput.removeAttribute('required');
         professorInput.value = '';
-        Utils.removerErro('professorAcompanhante');
+        if (typeof Utils !== 'undefined' && Utils.removerErro) {
+            Utils.removerErro('professorAcompanhante');
+        }
     }
     
     // Revalidar conflitos
@@ -1178,23 +1193,11 @@ function mostrarResultadoBusca(reservas) {
         }
     }
     
-    // Função para verificar acompanhamento
-    function verificarAcompanhamentoGlobal() {
-        try {
-            if (typeof verificarAcompanhamento === 'function') {
-                verificarAcompanhamento();
-            } else {
-                console.log('Função verificarAcompanhamento não carregada ainda');
-            }
-        } catch (error) {
-            console.error('Erro ao verificar acompanhamento:', error);
-        }
-    }
-    
     // Atribuir às variáveis globais IMEDIATAMENTE
     window.abrirBuscaReserva = abrirBuscaReservaGlobal;
     window.buscarReserva = buscarReservaGlobal;
-    window.verificarAcompanhamento = verificarAcompanhamentoGlobal;
+    // REMOVIDO: window.verificarAcompanhamento = verificarAcompanhamentoGlobal; 
+    // A função verificarAcompanhamento já existe e não deve ser sobrescrita
     
     console.log('Funções globais definidas imediatamente');
 })();
@@ -1251,6 +1254,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // 🚀 CACHE BUSTER - Versão Ultra-Defensiva v2.1 - ${Date.now()}
 console.log('🔥 FORMULARIO.JS ULTRA-DEFENSIVO CARREGADO EM:', new Date().toISOString());
+
+// 🧪 FUNÇÃO DE TESTE - Testar acompanhamento
+window.testarAcompanhamento = function() {
+    console.log('🧪 TESTANDO FUNCIONALIDADE DE ACOMPANHAMENTO...');
+    
+    const professorContainer = document.getElementById('professorContainer');
+    const debugInfo = document.getElementById('debugInfo');
+    
+    // Mostrar debug info
+    debugInfo.classList.remove('d-none');
+    
+    // Forçar exibição do campo de acompanhamento
+    professorContainer.style.display = 'block';
+    
+    console.log('✅ Campo de acompanhamento forçado a aparecer!');
+    alert('Campo de acompanhamento foi forçado a aparecer! Verifique o formulário.');
+};
 
 // 🧪 FUNÇÃO DE TESTE - Listar todas as reservas para debug
 window.testarConexaoBanco = async function() {

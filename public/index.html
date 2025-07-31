@@ -77,6 +77,16 @@
             <div class="col-12 text-center">
                 <h2 class="text-primary mb-3">Solicitação de Reserva</h2>
                 <p class="text-muted">Preencha o formulário abaixo para solicitar a reserva de laboratórios e/ou equipamentos</p>
+                
+                <!-- Botão de teste temporário para debug -->
+                <div class="alert alert-info d-none" id="debugInfo">
+                    <button type="button" class="btn btn-sm btn-warning" onclick="testarAcompanhamento()">
+                        🧪 Teste: Mostrar Campo Acompanhamento
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="console.log('Equipamentos:', document.querySelectorAll('#equipamentosContainer input:checked'))">
+                        🔍 Debug: Ver Equipamentos Selecionados
+                    </button>
+                </div>
             </div>
         </div>
 

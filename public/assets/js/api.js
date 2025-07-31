@@ -46,6 +46,26 @@ const API = {
     },
 
     /**
+     * Buscar laboratório por ID
+     */
+    async buscarLaboratorioPorId(laboratorioId) {
+        try {
+            const { data, error } = await supabase
+                .from('laboratorios')
+                .select('*')
+                .eq('id', laboratorioId)
+                .eq('ativo', true)
+                .single();
+
+            if (error) throw error;
+            return { sucesso: true, dados: data };
+        } catch (error) {
+            console.error('Erro ao buscar laboratório:', error);
+            return { sucesso: false, erro: error.message };
+        }
+    },
+
+    /**
      * Buscar equipamentos por bloco
      */
     async buscarEquipamentosPorBloco(blocoId) {
