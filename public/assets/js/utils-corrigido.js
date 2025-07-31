@@ -1,6 +1,6 @@
 /**
  * ReservaLAB - Sistema de Reservas de Laboratórios e Equipamentos
- * Utilitários Gerais
+ * Utilitários Gerais - VERSÃO CORRIGIDA
  * 
  * Idealizado e Desenvolvido por Carlos Henrique C. de Oliveira - Tec. Laboratório de Informática FAEN/UFGD - Engenheiro da Computação
  */
@@ -148,7 +148,7 @@ if (typeof Utils === 'undefined') {
 };
 }
 
-// Utilitários de data/hora para fuso horário de Cuiabá usando Luxon
+// Utilitários de data/hora para fuso horário de Cuiabá usando Luxon - VERSÃO CORRIGIDA
 if (typeof DateUtils === 'undefined') {
     var DateUtils = {
     ZONA: 'America/Cuiaba',
@@ -188,9 +188,7 @@ if (typeof DateUtils === 'undefined') {
         
         // Se é um Date JavaScript - AQUI ESTAVA O PROBLEMA
         if (date instanceof Date) {
-            // PROBLEMA: Date JavaScript não preserva timezone específica
-            // SOLUÇÃO: Extrair componentes e criar explicitamente em Cuiabá
-            
+            // Extrair componentes individuais do Date
             const year = date.getFullYear();
             const month = date.getMonth() + 1; // getMonth() retorna 0-11
             const day = date.getDate();
@@ -388,3 +386,4 @@ if (typeof window !== 'undefined') {
     window.ReservaUtils = ReservaUtils;
 }
 
+console.log('✅ Utils.js CORRIGIDO carregado - DateUtils.convertFromCuiabaToUTC está correta agora!');

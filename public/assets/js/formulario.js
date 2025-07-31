@@ -525,22 +525,11 @@ async function validarConflitos() {
     // Obter o laboratório selecionado (pode ser null se não houver seleção)
     const laboratorioId = laboratorioSelect.value ? parseInt(laboratorioSelect.value) : null;
 
-    // Converter para UTC a partir do horário de Cuiabá
-    const dataInicioCuiaba = new Date(`${dataReservaInput}T${horaInicioInput}:00`);
-    const dataFimCuiaba = new Date(`${dataReservaInput}T${horaFimInput}:00`);
-
-    const dataInicioUTC = DateUtils.convertFromCuiabaToUTC(dataInicioCuiaba);
-    const dataFimUTC = DateUtils.convertFromCuiabaToUTC(dataFimCuiaba);
-    
-    // Verificar se as conversões foram bem-sucedidas
-    if (!dataInicioUTC || !dataFimUTC || !dataInicioUTC.toISO || !dataFimUTC.toISO) {
-        console.error('Erro na conversão de datas para UTC');
-        return;
-    }
-
-    const dataReservaFormatada = dataInicioUTC.toISO().split("T")[0];
-    const horaInicioFormatada = dataInicioUTC.toISO().split("T")[1].substring(0, 5);
-    const horaFimFormatada = dataFimUTC.toISO().split("T")[1].substring(0, 5);
+    // SIMPLIFICAÇÃO: Usar horário local diretamente - sem conversões de timezone
+    // Se o usuário escolhe 7h, gravamos 7h. Simples assim!
+    const dataReservaFormatada = dataReservaInput;
+    const horaInicioFormatada = horaInicioInput;
+    const horaFimFormatada = horaFimInput;
     const equipamentosSelecionados = Array.from(document.querySelectorAll('#equipamentosContainer input:checked'))
         .map(cb => parseInt(cb.value));
     
@@ -660,13 +649,11 @@ async function submeterFormulario(event) {
     const dataReservaInput = document.getElementById("dataReserva").value;
     const horaInicioInput = document.getElementById("horaInicio").value;
     const horaFimInput = document.getElementById("horaFim").value;
-    const dataInicioCuiaba = new Date(`${dataReservaInput}T${horaInicioInput}:00`);
-    const dataFimCuiaba = new Date(`${dataReservaInput}T${horaFimInput}:00`);
-    const dataInicioUTC = DateUtils.convertFromCuiabaToUTC(dataInicioCuiaba);
-    const dataFimUTC = DateUtils.convertFromCuiabaToUTC(dataFimCuiaba);
-    const dataReservaFormatada = dataInicioUTC.toISO().split("T")[0];
-    const horaInicioFormatada = dataInicioUTC.toISO().split("T")[1].substring(0, 5);
-        const horaFimFormatada = dataFimUTC.toISO().split("T")[1].substring(0, 5);
+    
+    // SIMPLIFICAÇÃO: Usar horário local diretamente - sem conversões
+    const dataReservaFormatada = dataReservaInput;
+    const horaInicioFormatada = horaInicioInput;
+    const horaFimFormatada = horaFimInput;
 
     // Mostrar loading
     btnSubmit.disabled = true;
@@ -927,20 +914,16 @@ function mostrarResultadoBusca(reservas) {
                                 }
                                 
                                 try {
-                                    // Tentar conversão para Cuiabá
-                                    const dataReservaCuiaba = FormularioUtils.convertToCuiabaTimeSeguro(new Date(`${reserva.data_reserva}T${reserva.hora_inicio}`));
-                                    const horaInicioCuiaba = FormularioUtils.convertToCuiabaTimeSeguro(new Date(`${reserva.data_reserva}T${reserva.hora_inicio}`));
-                                    const horaFimCuiaba = FormularioUtils.convertToCuiabaTimeSeguro(new Date(`${reserva.data_reserva}T${reserva.hora_fim}`));
-                                    
-                                    dataFormatada = FormularioUtils.formatarDataSegura(dataReservaCuiaba);
-                                    horaInicioFormatada = FormularioUtils.formatarHoraSegura(horaInicioCuiaba);
-                                    horaFimFormatada = FormularioUtils.formatarHoraSegura(horaFimCuiaba);
-                                } catch (error) {
-                                    console.error('Erro na conversão de data/hora:', error);
-                                    // Usar dados brutos se a conversão falhar
+                                    // SIMPLIFICAÇÃO: Usar dados diretos do banco
                                     dataFormatada = FormularioUtils.formatarDataSegura(reserva.data_reserva);
                                     horaInicioFormatada = FormularioUtils.formatarHoraSegura(reserva.hora_inicio);
                                     horaFimFormatada = FormularioUtils.formatarHoraSegura(reserva.hora_fim);
+                                } catch (error) {
+                                    console.error('Erro na formatação:', error);
+                                    // Usar dados brutos se a formatação falhar
+                                    dataFormatada = reserva.data_reserva;
+                                    horaInicioFormatada = reserva.hora_inicio;
+                                    horaFimFormatada = reserva.hora_fim;
                                 }
                                 
                                 return `
@@ -1002,20 +985,16 @@ function mostrarResultadoBusca(reservas) {
         let dataFormatada, horaInicioFormatada, horaFimFormatada;
         
         try {
-            // Tentar conversão para Cuiabá
-            const dataReservaCuiaba = FormularioUtils.convertToCuiabaTimeSeguro(new Date(`${reserva.data_reserva}T${reserva.hora_inicio}`));
-            const horaInicioCuiaba = FormularioUtils.convertToCuiabaTimeSeguro(new Date(`${reserva.data_reserva}T${reserva.hora_inicio}`));
-            const horaFimCuiaba = FormularioUtils.convertToCuiabaTimeSeguro(new Date(`${reserva.data_reserva}T${reserva.hora_fim}`));
-            
-            dataFormatada = FormularioUtils.formatarDataSegura(dataReservaCuiaba);
-            horaInicioFormatada = FormularioUtils.formatarHoraSegura(horaInicioCuiaba);
-            horaFimFormatada = FormularioUtils.formatarHoraSegura(horaFimCuiaba);
-        } catch (error) {
-            console.error('Erro na conversão de data/hora individual:', error);
-            // Usar dados brutos se a conversão falhar
+            // SIMPLIFICAÇÃO: Usar dados diretos do banco
             dataFormatada = FormularioUtils.formatarDataSegura(reserva.data_reserva);
             horaInicioFormatada = FormularioUtils.formatarHoraSegura(reserva.hora_inicio);
             horaFimFormatada = FormularioUtils.formatarHoraSegura(reserva.hora_fim);
+        } catch (error) {
+            console.error('Erro na formatação individual:', error);
+            // Usar dados brutos se a formatação falhar
+            dataFormatada = reserva.data_reserva;
+            horaInicioFormatada = reserva.hora_inicio;
+            horaFimFormatada = reserva.hora_fim;
         }
         
         // Montar lista de recursos

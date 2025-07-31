@@ -448,18 +448,9 @@ const API = {
      */
     async criarReserva(dadosReserva) {
         try {
-            // Primeiro, criar a reserva principal
-            // Converte a data e horários de Cuiabá para UTC antes de enviar para o Supabase
-            const dataInicioCuiaba = new Date(`${dadosReserva.dataReserva}T${dadosReserva.horaInicio}:00`);
-            const dataFimCuiaba = new Date(`${dadosReserva.dataReserva}T${dadosReserva.horaFim}:00`);
+            // SIMPLIFICAÇÃO: Usar dados diretos sem conversão de timezone
+            // Se o usuário escolhe 7h, gravamos 7h no banco!
             
-            const dataInicioUTC = DateUtils.convertFromCuiabaToUTC(dataInicioCuiaba);
-            const dataFimUTC = DateUtils.convertFromCuiabaToUTC(dataFimCuiaba);
-            
-            const dataReservaUTC = dataInicioUTC.toISO().split("T")[0];
-            const horaInicioUTC = dataInicioUTC.toISO().split("T")[1].substring(0, 5);
-            const horaFimUTC = dataFimUTC.toISO().split("T")[1].substring(0, 5);
-
             const { data: reservaCriada, error: errorReserva } = await supabase
                 .from("reservas")
                 .insert([{
@@ -467,9 +458,9 @@ const API = {
                     siape_rga: dadosReserva.siapeRga,
                     email: dadosReserva.email,
                     telefone: dadosReserva.telefone,
-                    data_reserva: dataReservaUTC,
-                    hora_inicio: horaInicioUTC,
-                    hora_fim: horaFimUTC,
+                    data_reserva: dadosReserva.dataReserva,
+                    hora_inicio: dadosReserva.horaInicio,
+                    hora_fim: dadosReserva.horaFim,
                     finalidade: dadosReserva.finalidade,
                     laboratorio_id: dadosReserva.laboratorioId || null,
                     professor_acompanhante: dadosReserva.professorAcompanhante,
@@ -526,15 +517,8 @@ const API = {
 
             for (const data of datas) {
                 // Converter data e horários para UTC de forma consistente
-                const dataInicioCuiaba = new Date(`${data.toISOString().split("T")[0]}T${dadosReserva.horaInicio}:00`);
-                const dataFimCuiaba = new Date(`${data.toISOString().split("T")[0]}T${dadosReserva.horaFim}:00`);
-                
-                const dataInicioUTC = DateUtils.convertFromCuiabaToUTC(dataInicioCuiaba);
-                const dataFimUTC = DateUtils.convertFromCuiabaToUTC(dataFimCuiaba);
-                
-                const dataFormatada = dataInicioUTC.toISO().split("T")[0];
-                const horaInicioUTC = dataInicioUTC.toISO().split("T")[1].substring(0, 5);
-                const horaFimUTC = dataFimUTC.toISO().split("T")[1].substring(0, 5);
+                // SIMPLIFICAÇÃO: Usar dados diretos para reservas recorrentes também
+                const dataFormatada = data.toISOString().split("T")[0];
                 
                 // Criar reserva filha
                 const { data: reservaFilha, error } = await supabase
@@ -546,8 +530,8 @@ const API = {
                         email: dadosReserva.email,
                         telefone: dadosReserva.telefone,
                         data_reserva: dataFormatada,
-                        hora_inicio: horaInicioUTC,
-                        hora_fim: horaFimUTC,
+                        hora_inicio: dadosReserva.horaInicio,
+                        hora_fim: dadosReserva.horaFim,
                         finalidade: dadosReserva.finalidade,
                         laboratorio_id: dadosReserva.laboratorioId || null,
                         professor_acompanhante: dadosReserva.professorAcompanhante,
