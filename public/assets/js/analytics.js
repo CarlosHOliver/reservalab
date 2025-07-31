@@ -10,11 +10,11 @@
  * Para usar: incluir este script após carregar a biblioteca @vercel/analytics
  */
 
-// Função para inicializar analytics
+// Função para inicializar analytics (corrigida)
 function initVercelAnalytics() {
     try {
-        // Verifica se a biblioteca está disponível
-        if (typeof window !== 'undefined' && window.va) {
+        // Verifica se a biblioteca está disponível e tem o método track
+        if (typeof window !== 'undefined' && window.va && typeof window.va.track === 'function') {
             // Inicializa o analytics
             window.va.track('page_view', {
                 page: window.location.pathname,
@@ -28,22 +28,37 @@ function initVercelAnalytics() {
             trackReservaLabEvents();
             
         } else {
-            console.warn('⚠️ Vercel Analytics não encontrado');
+            console.warn('⚠️ Vercel Analytics não disponível - criando implementação stub');
+            
+            // Criar implementação stub para desenvolvimento
+            window.va = window.va || {};
+            window.va.track = function(event, data) {
+                console.log(`📊 Analytics Stub - Evento: ${event}`, data);
+            };
+            
+            // Inicializar eventos com stub
+            trackReservaLabEvents();
         }
     } catch (error) {
         console.error('❌ Erro ao inicializar Vercel Analytics:', error);
+        
+        // Fallback: criar stub em caso de erro
+        window.va = window.va || {};
+        window.va.track = function(event, data) {
+            console.log(`📊 Analytics Fallback - Evento: ${event}`, data);
+        };
     }
 }
 
 /**
- * Configurar eventos específicos do ReservaLAB
+ * Configurar eventos específicos do ReservaLAB (corrigido)
  */
 function trackReservaLabEvents() {
     // Rastrear envio de formulários
     const formReserva = document.getElementById('formReserva');
     if (formReserva) {
         formReserva.addEventListener('submit', function(e) {
-            if (window.va) {
+            if (window.va && typeof window.va.track === 'function') {
                 window.va.track('reserva_enviada', {
                     page: 'nova_reserva',
                     timestamp: new Date().toISOString()
@@ -56,7 +71,7 @@ function trackReservaLabEvents() {
     const btnBuscar = document.querySelector('[onclick="buscarReserva()"]');
     if (btnBuscar) {
         btnBuscar.addEventListener('click', function() {
-            if (window.va) {
+            if (window.va && typeof window.va.track === 'function') {
                 window.va.track('busca_reserva', {
                     page: window.location.pathname,
                     timestamp: new Date().toISOString()
@@ -72,7 +87,7 @@ function trackReservaLabEvents() {
             const onclick = this.getAttribute('onclick');
             if (onclick && onclick.includes('window.location.href')) {
                 const match = onclick.match(/window\.location\.href='([^']+)'/);
-                if (match && window.va) {
+                if (match && window.va && typeof window.va.track === 'function') {
                     window.va.track('navegacao', {
                         from: window.location.pathname,
                         to: match[1],
@@ -85,7 +100,7 @@ function trackReservaLabEvents() {
     
     // Rastrear uso do dashboard admin
     if (window.location.pathname.includes('admin')) {
-        if (window.va) {
+        if (window.va && typeof window.va.track === 'function') {
             window.va.track('admin_access', {
                 page: window.location.pathname,
                 timestamp: new Date().toISOString()
@@ -95,15 +110,21 @@ function trackReservaLabEvents() {
 }
 
 /**
- * Rastrear evento customizado
+ * Rastrear evento customizado (corrigido)
  */
 function trackCustomEvent(eventName, properties = {}) {
-    if (window.va) {
-        window.va.track(eventName, {
-            ...properties,
-            timestamp: new Date().toISOString(),
-            page: window.location.pathname
-        });
+    try {
+        if (window.va && typeof window.va.track === 'function') {
+            window.va.track(eventName, {
+                ...properties,
+                timestamp: new Date().toISOString(),
+                page: window.location.pathname
+            });
+        } else {
+            console.log(`📊 Analytics Stub - Custom Event: ${eventName}`, properties);
+        }
+    } catch (error) {
+        console.warn('Erro ao rastrear evento customizado:', error);
     }
 }
 

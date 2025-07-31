@@ -239,6 +239,24 @@ usuarios            -- Gestores e administradores
 reserva_equipamentos -- Relação N:N reservas-equipamentos
 ```
 
+### **Estrutura do Banco de Dados**
+```sql
+-- Tabelas principais (PostgreSQL + Supabase)
+blocos              -- Blocos da FAEN (A, B, C, etc.)
+laboratorios        -- Laboratórios por bloco
+equipamentos        -- Equipamentos e patrimônio
+usuarios            -- Gestores e administradores  
+reservas            -- Reservas com protocolo único
+reserva_equipamentos -- Relação N:N reservas-equipamentos
+formularios_acesso  -- Formulários de acesso
+reports_patrimoniais -- Sistema de reports
+reports_ocorrencias -- Sistema de ocorrências
+patrimonial_config  -- Configurações do sistema
+
+-- Schema atual disponível em:
+-- database/schema_atual_producao.sql ⭐
+```
+
 ### **API Endpoints (Supabase)**
 ```javascript
 // Principais endpoints utilizados
@@ -247,6 +265,8 @@ POST /reservas              // Criar nova reserva
 GET  /laboratorios          // Listar laboratórios
 GET  /equipamentos          // Listar equipamentos
 GET  /blocos                // Listar blocos
+GET  /usuarios              // Gestão de usuários (admin)
+POST /reports_patrimoniais  // Sistema de reports
 ```
 
 ---
@@ -423,7 +443,8 @@ reservalab/
 │   │       └── 🖼️ favicon.ico   # Favicon do sistema
 │   └── 📁 docs/                 # Documentação adicional
 ├── 📁 database/                 # Scripts do banco de dados
-│   ├── 📄 supabase_schema.sql   # Schema completo
+│   ├── 📄 schema_atual_producao.sql # Schema atual em produção ⭐
+│   ├── 📄 supabase_schema.sql   # Schema completo original
 │   ├── 📄 inserir_dados_teste.sql# Dados para desenvolvimento
 │   └── 📄 criar_usuarios_admin.sql# Usuários administrativos
 ├── 📄 package.json              # Dependências e scripts

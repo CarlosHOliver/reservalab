@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste SysDBG - Analytics</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+    </style>
+</head>
+<body>
+    <h1>Teste de Correções SysDBG</h1>
+    <div id="results"></div>
+
+    <!-- Simulação do Vercel Analytics -->
+    <script>
+        window.va = window.va || function () { 
+            (window.vaq = window.vaq || []).push(arguments); 
+        };
+        // Função stub para testes
+        window.va.track = window.va.track || function(event, data) {
+            console.log('Analytics test track:', event, data);
+            return true;
+        };
+    </script>
+
+    <!-- Analytics script -->
+    <script src="assets/js/analytics.js"></script>
+
+    <script>
+        const results = document.getElementById('results');
+
+        function addResult(message, type) {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        // Teste 1: Verificar se analytics carregou
+        setTimeout(() => {
+            if (typeof window.trackCustomEvent === 'function') {
+                addResult('✅ Analytics carregado corretamente', 'success');
+                
+                // Teste 2: Testar função customizada
+                try {
+                    window.trackCustomEvent('test_event', { test: true });
+                    addResult('✅ trackCustomEvent funcionando', 'success');
+                } catch (error) {
+                    addResult(`❌ Erro em trackCustomEvent: ${error.message}`, 'error');
+                }
+                
+                // Teste 3: Verificar window.va.track
+                if (window.va && typeof window.va.track === 'function') {
+                    addResult('✅ window.va.track disponível', 'success');
+                } else {
+                    addResult('⚠️ window.va.track não disponível (normal em desenvolvimento)', 'warning');
+                }
+                
+            } else {
+                addResult('❌ Analytics não carregou', 'error');
+            }
+        }, 1000);
+
+        // Teste 4: Simular erro JavaScript
+        window.addEventListener('error', function(e) {
+            addResult(`⚠️ Erro JavaScript capturado: ${e.message}`, 'warning');
+        });
+
+        console.log('Teste de correções iniciado...');
+    </script>
+</body>
+</html>
