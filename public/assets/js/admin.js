@@ -150,7 +150,7 @@ async function testarConexaoSupabase() {
         console.log('🔗 Testando conexão com Supabase...');
         const { data, error } = await supabase
             .from('blocos')
-            .select('count(*)')
+            .select('*', { count: 'exact', head: true })
             .limit(1);
             
         if (error) {
@@ -753,7 +753,7 @@ async function loadReservas() {
                 </td>
                 <td>
                     <span class="badge ${getStatusBadgeClass(reserva.status)}">
-                        ${getStatusText(reserva.status)}
+                        ${getStatusTextReserva(reserva.status)}
                     </span>
                 </td>
                 <td>
@@ -813,7 +813,7 @@ async function verDetalhesReserva(reservaId) {
                         <tr><td><strong>Horário:</strong></td><td>${reserva.hora_inicio} às ${reserva.hora_fim}</td></tr>
                         <tr><td><strong>Status:</strong></td><td>
                             <span class="badge ${getStatusBadgeClass(reserva.status)}">
-                                ${getStatusText(reserva.status)}
+                                ${getStatusTextReserva(reserva.status)}
                             </span>
                         </td></tr>
                     </table>
@@ -1447,15 +1447,15 @@ async function loadEquipamentosAsync() {
             throw error;
         }
 
-        console.log('✅ Equipamentos carregados:', equipamentos);
+        console.log('✅ Equipamentos carregados:', equipamentos.length, 'equipamentos');
         
-        // Debug: verificar status dos equipamentos
+        // Verificar status dos equipamentos
         if (equipamentos && equipamentos.length > 0) {
             const statusUnicos = [...new Set(equipamentos.map(e => e.status))];
-            console.log('📊 Status únicos encontrados nos equipamentos:', statusUnicos);
+            console.log('📊 Status encontrados:', statusUnicos);
             
             // Verificar equipamentos com status problemático
-            const equipamentosProblematicos = equipamentos.filter(e => !['disponivel', 'em_manutencao', 'inativo', 'ocupado', 'reservado'].includes(e.status));
+            const equipamentosProblematicos = equipamentos.filter(e => !['disponivel', 'em_manutencao', 'inativo'].includes(e.status));
             if (equipamentosProblematicos.length > 0) {
                 console.warn('⚠️ Equipamentos com status desconhecido:', equipamentosProblematicos);
             }
@@ -1544,41 +1544,41 @@ async function loadEquipamentosAsync() {
  * Funções auxiliares para status de equipamentos
  */
 function getStatusColor(status) {
-    switch (status) {
+    const normalizedStatus = status ? status.toString().trim().toLowerCase() : '';
+    
+    switch (normalizedStatus) {
         case 'disponivel': return 'bg-success';
         case 'em_manutencao': return 'bg-warning';
         case 'inativo': return 'bg-danger';
-        case 'ocupado': return 'bg-info';
-        case 'reservado': return 'bg-primary';
-        default: 
-            console.warn('Status desconhecido encontrado:', status);
-            return 'bg-secondary';
+        default: return 'bg-secondary';
     }
 }
 
 function getStatusIcon(status) {
-    switch (status) {
+    const normalizedStatus = status ? status.toString().trim().toLowerCase() : '';
+    
+    switch (normalizedStatus) {
         case 'disponivel': return 'bi-check-circle';
         case 'em_manutencao': return 'bi-tools';
         case 'inativo': return 'bi-x-circle';
-        case 'ocupado': return 'bi-person-fill';
-        case 'reservado': return 'bi-calendar-check';
-        default: 
-            console.warn('Status desconhecido encontrado:', status);
-            return 'bi-question-circle';
+        default: return 'bi-question-circle';
     }
 }
 
+// === FUNÇÃO STATUS EQUIPAMENTOS ===
 function getStatusText(status) {
-    switch (status) {
-        case 'disponivel': return 'Disponível';
-        case 'em_manutencao': return 'Em Manutenção';
-        case 'inativo': return 'Inativo';
-        case 'ocupado': return 'Ocupado';
-        case 'reservado': return 'Reservado';
+    const normalizedStatus = status ? status.toString().trim().toLowerCase() : '';
+    
+    switch (normalizedStatus) {
+        case 'disponivel': 
+            return 'Disponível';
+        case 'em_manutencao': 
+            return 'Em Manutenção';
+        case 'inativo': 
+            return 'Inativo';
         default: 
-            console.warn('Status desconhecido encontrado:', status);
-            return status ? `${status} (desconhecido)` : 'Indefinido';
+            console.warn('⚠️ Status desconhecido encontrado:', status);
+            return 'Desconhecido';
     }
 }
 
@@ -1663,7 +1663,7 @@ function getStatusBadgeClass(status) {
     }
 }
 
-function getStatusText(status) {
+function getStatusTextReserva(status) {
     switch(status) {
         case 'pendente': return 'Pendente';
         case 'aprovada': return 'Aprovada';

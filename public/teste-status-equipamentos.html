@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Status Equipamentos</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>🧪 Teste Status dos Equipamentos</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>🔄 Atualizar Status para Teste</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary mb-2" onclick="atualizarStatusTeste()">
+                            Diversificar Status dos Equipamentos
+                        </button>
+                        <button class="btn btn-secondary mb-2" onclick="resetarStatus()">
+                            Resetar Todos para "Disponível"
+                        </button>
+                        <div id="resultadoUpdate"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>📊 Status Atuais</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-info mb-2" onclick="verificarStatus()">
+                            Verificar Status Atuais
+                        </button>
+                        <div id="resultadoStatus"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>🎯 Teste do Dashboard</h5>
+                </div>
+                <div class="card-body">
+                    <p>Após diversificar os status, teste o dashboard:</p>
+                    <a href="/admin/" class="btn btn-success" target="_blank">🔗 Abrir Dashboard Admin</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração do Supabase
+        const supabaseUrl = 'https://qagqfshkjehqwykbfvid.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZ3Fmc2hramVocXd5a2JmdmlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ0NTEzNjEsImV4cCI6MjA1MDAyNzM2MX0.g-dCQEE9bKWMoHjE8YYfM7ycHrRuiCQDzDyKjJhtfVs';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function atualizarStatusTeste() {
+            try {
+                document.getElementById('resultadoUpdate').innerHTML = '<div class="text-info">🔄 Atualizando status...</div>';
+                
+                // Equipamentos em manutenção
+                const updateManutencao = await supabase
+                    .from('equipamentos')
+                    .update({ status: 'em_manutencao' })
+                    .in('patrimonio', ['32897', '42044', '32807']);
+                
+                // Equipamentos inativos
+                const updateInativo = await supabase
+                    .from('equipamentos')
+                    .update({ status: 'inativo' })
+                    .in('patrimonio', ['123456', '21622']);
+                
+                // Equipamentos ocupados
+                const updateOcupado = await supabase
+                    .from('equipamentos')
+                    .update({ status: 'ocupado' })
+                    .in('patrimonio', ['PAT001', 'U2FAENPC']);
+                
+                // Equipamentos reservados
+                const updateReservado = await supabase
+                    .from('equipamentos')
+                    .update({ status: 'reservado' })
+                    .in('patrimonio', ['29238', '37743']);
+                
+                if (updateManutencao.error || updateInativo.error || updateOcupado.error || updateReservado.error) {
+                    throw new Error('Erro ao atualizar alguns equipamentos');
+                }
+                
+                document.getElementById('resultadoUpdate').innerHTML = `
+                    <div class="alert alert-success">
+                        ✅ Status atualizados com sucesso!<br>
+                        <small>
+                            • Em Manutenção: 3 equipamentos<br>
+                            • Inativos: 2 equipamentos<br>
+                            • Ocupados: 2 equipamentos<br>
+                            • Reservados: 2 equipamentos
+                        </small>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('❌ Erro ao atualizar status:', error);
+                document.getElementById('resultadoUpdate').innerHTML = `
+                    <div class="alert alert-danger">
+                        ❌ Erro: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function resetarStatus() {
+            try {
+                document.getElementById('resultadoUpdate').innerHTML = '<div class="text-info">🔄 Resetando todos os status...</div>';
+                
+                const { data, error } = await supabase
+                    .from('equipamentos')
+                    .update({ status: 'disponivel' })
+                    .neq('id', 0); // Atualiza todos
+                
+                if (error) throw error;
+                
+                document.getElementById('resultadoUpdate').innerHTML = `
+                    <div class="alert alert-info">
+                        🔄 Todos os equipamentos foram marcados como "Disponível"
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('❌ Erro ao resetar status:', error);
+                document.getElementById('resultadoUpdate').innerHTML = `
+                    <div class="alert alert-danger">
+                        ❌ Erro: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function verificarStatus() {
+            try {
+                document.getElementById('resultadoStatus').innerHTML = '<div class="text-info">🔍 Verificando status...</div>';
+                
+                const { data: equipamentos, error } = await supabase
+                    .from('equipamentos')
+                    .select('nome, patrimonio, status')
+                    .order('status, nome');
+                
+                if (error) throw error;
+                
+                // Agrupar por status
+                const statusGroups = {};
+                equipamentos.forEach(equip => {
+                    if (!statusGroups[equip.status]) {
+                        statusGroups[equip.status] = [];
+                    }
+                    statusGroups[equip.status].push(equip);
+                });
+                
+                let html = '<div class="mt-2">';
+                Object.keys(statusGroups).forEach(status => {
+                    const count = statusGroups[status].length;
+                    const statusColors = {
+                        'disponivel': 'success',
+                        'em_manutencao': 'warning',
+                        'inativo': 'danger',
+                        'ocupado': 'info',
+                        'reservado': 'primary'
+                    };
+                    const color = statusColors[status] || 'secondary';
+                    
+                    html += `
+                        <div class="mb-2">
+                            <span class="badge bg-${color}">${status}</span>
+                            <span class="text-muted">(${count})</span>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                document.getElementById('resultadoStatus').innerHTML = html;
+                
+            } catch (error) {
+                console.error('❌ Erro ao verificar status:', error);
+                document.getElementById('resultadoStatus').innerHTML = `
+                    <div class="alert alert-danger">
+                        ❌ Erro: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Verificar status inicial
+        window.addEventListener('load', verificarStatus);
+    </script>
+</body>
+</html>

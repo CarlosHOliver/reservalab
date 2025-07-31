@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Status Equipamentos</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Debug Status dos Equipamentos</h1>
+    <div id="resultado"></div>
+
+    <script>
+        // Configuração do Supabase
+        const supabaseUrl = 'https://qagqfshkjehqwykbfvid.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZ3Fmc2hramVocXd5a2JmdmlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ0NTEzNjEsImV4cCI6MjA1MDAyNzM2MX0.g-dCQEE9bKWMoHjE8YYfM7ycHrRuiCQDzDyKjJhtfVs';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function debugStatus() {
+            try {
+                console.log('🔍 Carregando equipamentos para debug...');
+                
+                const { data: equipamentos, error } = await supabase
+                    .from('equipamentos')
+                    .select('id, nome, patrimonio, status')
+                    .order('nome');
+
+                if (error) {
+                    console.error('❌ Erro ao carregar equipamentos:', error);
+                    document.getElementById('resultado').innerHTML = `
+                        <div style="color: red;">
+                            <h3>❌ Erro ao carregar equipamentos:</h3>
+                            <pre>${JSON.stringify(error, null, 2)}</pre>
+                        </div>
+                    `;
+                    return;
+                }
+
+                console.log('✅ Equipamentos carregados:', equipamentos);
+                
+                let html = '<h3>🔍 Status dos Equipamentos no Banco de Dados:</h3><table border="1" style="border-collapse: collapse; width: 100%;"><tr><th>ID</th><th>Nome</th><th>Patrimônio</th><th>Status (valor exato)</th><th>Tipo do Status</th><th>Caracteres</th></tr>';
+                
+                // Coletar todos os status únicos
+                const statusUnicos = [...new Set(equipamentos.map(e => e.status))];
+                console.log('📊 Status únicos encontrados:', statusUnicos);
+                
+                equipamentos.forEach(equip => {
+                    const statusBytes = [];
+                    if (equip.status) {
+                        for (let i = 0; i < equip.status.length; i++) {
+                            statusBytes.push(equip.status.charCodeAt(i));
+                        }
+                    }
+                    
+                    html += `
+                        <tr>
+                            <td>${equip.id}</td>
+                            <td>${equip.nome}</td>
+                            <td>${equip.patrimonio}</td>
+                            <td style="background: #f0f0f0; font-family: monospace;">'${equip.status}'</td>
+                            <td>${typeof equip.status}</td>
+                            <td style="font-size: 11px;">[${statusBytes.join(', ')}]</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</table>';
+                
+                html += '<h3>📊 Análise dos Status:</h3><ul>';
+                statusUnicos.forEach(status => {
+                    const count = equipamentos.filter(e => e.status === status).length;
+                    html += `<li><strong>'${status}'</strong> - ${count} equipamento(s) - Tipo: ${typeof status}</li>`;
+                });
+                html += '</ul>';
+
+                // Testar função getStatusText
+                html += '<h3>🔧 Teste da Função getStatusText:</h3><ul>';
+                
+                function getStatusText(status) {
+                    switch (status) {
+                        case 'disponivel': return 'Disponível';
+                        case 'em_manutencao': return 'Em Manutenção';
+                        case 'inativo': return 'Inativo';
+                        case 'ocupado': return 'Ocupado';
+                        case 'reservado': return 'Reservado';
+                        default: 
+                            console.warn('Status desconhecido encontrado:', status);
+                            return status ? `${status} (desconhecido)` : 'Indefinido';
+                    }
+                }
+                
+                statusUnicos.forEach(status => {
+                    const resultado = getStatusText(status);
+                    const matches = ['disponivel', 'em_manutencao', 'inativo', 'ocupado', 'reservado'].includes(status);
+                    html += `<li>Input: '<code>${status}</code>' → Output: '<strong>${resultado}</strong>' ${matches ? '✅' : '❌'}</li>`;
+                });
+                html += '</ul>';
+                
+                document.getElementById('resultado').innerHTML = html;
+                
+            } catch (err) {
+                console.error('❌ Erro no debug:', err);
+                document.getElementById('resultado').innerHTML = `
+                    <div style="color: red;">
+                        <h3>❌ Erro no debug:</h3>
+                        <pre>${err.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Executar debug quando a página carregar
+        window.addEventListener('load', debugStatus);
+    </script>
+</body>
+</html>
