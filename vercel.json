@@ -8,8 +8,5 @@
     "app": {
       "runtime": "@vercel/static"
     }
-  },
-  "analytics": {
-    "enable": true
   }
 }
