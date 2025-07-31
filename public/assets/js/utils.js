@@ -182,6 +182,36 @@ if (typeof DateUtils === 'undefined') {
     },
 
     /**
+     * Converte uma data/hora UTC para horário de Cuiabá (DateTime Luxon)
+     */
+    convertFromUTCToCuiaba(utcDate) {
+        if (typeof utcDate === 'string') {
+            return luxon.DateTime.fromISO(utcDate, { zone: 'UTC' }).setZone(this.ZONA);
+        } else if (utcDate instanceof Date) {
+            return luxon.DateTime.fromJSDate(utcDate, { zone: 'UTC' }).setZone(this.ZONA);
+        } else if (luxon.DateTime.isDateTime(utcDate)) {
+            return utcDate.setZone(this.ZONA);
+        }
+        return luxon.DateTime.now().setZone(this.ZONA);
+    },
+
+    /**
+     * Formata hora UTC para exibição em horário de Cuiabá (HH:mm)
+     */
+    formatarHoraUTC(horaUTC) {
+        if (!horaUTC) return '00:00';
+        
+        // Se é apenas uma string de hora (HH:mm), assumir que é UTC e converter
+        if (typeof horaUTC === 'string' && horaUTC.match(/^\d{2}:\d{2}$/)) {
+            const hoje = luxon.DateTime.now().toISODate();
+            const dataHoraUTC = luxon.DateTime.fromISO(`${hoje}T${horaUTC}:00`, { zone: 'UTC' });
+            return dataHoraUTC.setZone(this.ZONA).toFormat('HH:mm');
+        }
+        
+        return this.convertFromUTCToCuiaba(horaUTC).toFormat('HH:mm');
+    },
+
+    /**
      * Formata uma data para exibição (DD/MM/AAAA)
      */
     formatarData(dt) {
