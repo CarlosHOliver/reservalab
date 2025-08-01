@@ -489,22 +489,28 @@ function inicializarCalendario() {
  * Extrair bloco do recurso usando dados do banco de dados
  */
 function extrairBlocoRecurso(reserva) {
+    console.log('🔍 extrairBlocoRecurso - Dados da reserva:', reserva);
     let bloco = 'N/A';
     
     // Se for laboratório
     if (reserva.laboratorios) {
+        console.log('🔍 É laboratório:', reserva.laboratorios);
         // Usar o nome do bloco vindo do banco de dados
         bloco = reserva.laboratorios.blocos?.nome || 'N/A';
+        console.log('🔍 Bloco do laboratório:', bloco);
     }
     // Se for equipamento
     else if (reserva.reserva_equipamentos && reserva.reserva_equipamentos.length > 0) {
         const equipamento = reserva.reserva_equipamentos[0].equipamentos;
+        console.log('🔍 É equipamento:', equipamento);
         if (equipamento && equipamento.blocos) {
             // Usar o nome do bloco do equipamento vindo do banco de dados
             bloco = equipamento.blocos.nome || 'N/A';
+            console.log('🔍 Bloco do equipamento:', bloco);
         }
     }
     
+    console.log('🔍 Bloco retornado:', bloco);
     return bloco;
 }
 
@@ -697,9 +703,12 @@ function mostrarDetalhesReservaModal(reserva) {
     
     if (!modal || !content) return;
     
+    // Separar recurso e bloco
     const recurso = reserva.laboratorios ? 
-        `${reserva.laboratorios.nome} (Bloco ${extrairBlocoRecurso(reserva)})` :
+        reserva.laboratorios.nome :
         reserva.reserva_equipamentos?.[0]?.equipamentos?.nome || 'N/A';
+    
+    const bloco = extrairBlocoRecurso(reserva);
     
     const emAndamento = isReservaEmAndamento(reserva);
     
@@ -723,6 +732,10 @@ function mostrarDetalhesReservaModal(reserva) {
                     <tr>
                         <td><strong>Recurso:</strong></td>
                         <td>${recurso}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Bloco:</strong></td>
+                        <td>${bloco}</td>
                     </tr>
                     <tr>
                         <td><strong>Status:</strong></td>

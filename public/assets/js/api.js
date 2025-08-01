@@ -579,9 +579,9 @@ const API = {
                 .from('reservas')
                 .select(`
                     *,
-                    laboratorios (nome),
+                    laboratorios (nome, blocos(nome)),
                     reserva_equipamentos (
-                        equipamentos (nome)
+                        equipamentos (nome, blocos(nome))
                     )
                 `)
                 .eq('protocolo', protocoloLimpo)
@@ -604,9 +604,9 @@ const API = {
                     .from('reservas')
                     .select(`
                         *,
-                        laboratorios (nome),
+                        laboratorios (nome, blocos(nome)),
                         reserva_equipamentos (
-                            equipamentos (nome)
+                            equipamentos (nome, blocos(nome))
                         )
                     `)
                     .ilike('protocolo', `%${protocoloLimpo}%`)
