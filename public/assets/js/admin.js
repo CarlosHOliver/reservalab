@@ -626,8 +626,9 @@ async function loadEstatisticas() {
         const aprovadasMes = reservasMes?.filter(r => r.status === 'aprovada').length || 0;
         const taxaAprovacao = totalMes > 0 ? Math.round((aprovadasMes / totalMes) * 100) : 0;
         
-        document.getElementById('estatTotalMes').textContent = totalMes;
-        document.getElementById('estatTaxaAprovacao').textContent = `${taxaAprovacao}%`;
+        // Card de estatísticas removido - comentando as referências
+        // document.getElementById('estatTotalMes').textContent = totalMes;
+        // document.getElementById('estatTaxaAprovacao').textContent = `${taxaAprovacao}%`;
         
     } catch (error) {
         console.error('Erro ao carregar estatísticas:', error);
