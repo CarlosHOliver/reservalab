@@ -261,7 +261,7 @@
                                     <div class="col-md-2">
                                         <select class="form-select form-select-sm" id="filtro-tipo" onchange="aplicarFiltros()">
                                             <option value="todos">Todos os Recursos</option>
-                                            <option value="laboratorio">Laboratórios</option>
+                                            <option value="laboratorio" selected>Laboratórios</option>
                                             <option value="equipamento">Equipamentos</option>
                                         </select>
                                     </div>
@@ -271,7 +271,7 @@
                                         <select class="form-select form-select-sm" id="filtro-status" onchange="aplicarFiltros()">
                                             <option value="todos">Todos os Status</option>
                                             <option value="pendente">Pendentes</option>
-                                            <option value="aprovada">Aprovadas</option>
+                                            <option value="aprovada" selected>Aprovadas</option>
                                             <option value="rejeitada">Rejeitadas</option>
                                         </select>
                                     </div>
@@ -284,7 +284,7 @@
                                                 <option value="mes">📅 Mês</option>
                                                 <option value="dia">📅 Dia</option>
                                             </select>
-                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-limpar-filtros" onclick="limparFiltros()" title="Limpar Filtros">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-limpar-filtros" onclick="limparFiltros()" title="Aplicar Filtros Padrão">
                                                 <i class="bi bi-arrow-clockwise"></i>
                                             </button>
                                         </div>
@@ -347,15 +347,16 @@
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 120px;">Horário</th>
+                                        <th style="width: 100px;">Horário</th>
                                         <th>Recurso</th>
+                                        <th style="width: 140px;">Bloco</th>
                                         <th>Solicitante</th>
-                                        <th style="width: 130px;" class="text-center">Status</th>
+                                        <th style="width: 120px;" class="text-center">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaReservasHoje">
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted py-5">
+                                        <td colspan="5" class="text-center text-muted py-5">
                                             <i class="bi bi-calendar-x fs-1"></i><br>
                                             <span class="mt-2 d-block">Carregando reservas...</span>
                                         </td>
@@ -381,15 +382,16 @@
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 120px;">Horário</th>
+                                        <th style="width: 100px;">Horário</th>
                                         <th>Recurso</th>
+                                        <th style="width: 140px;">Bloco</th>
                                         <th>Solicitante</th>
-                                        <th style="width: 130px;" class="text-center">Status</th>
+                                        <th style="width: 120px;" class="text-center">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaReservasAmanha">
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted py-5">
+                                        <td colspan="5" class="text-center text-muted py-5">
                                             <i class="bi bi-calendar-x fs-1"></i><br>
                                             <span class="mt-2 d-block">Carregando reservas...</span>
                                         </td>

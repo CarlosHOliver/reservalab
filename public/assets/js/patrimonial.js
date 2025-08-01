@@ -67,6 +67,9 @@ function inicializarFiltros() {
     // Carregar opções de blocos
     carregarBlocosNoFiltro();
     
+    // Definir filtros padrão conforme solicitado (Todos os blocos | Laboratórios | Aprovadas)
+    definirFiltrosPadrao();
+    
     // Event listeners para os filtros
     document.getElementById('filtro-bloco')?.addEventListener('change', function() {
         console.log('🔍 Filtro bloco alterado para:', this.value);
@@ -100,35 +103,61 @@ function inicializarFiltros() {
 }
 
 /**
+ * Definir filtros padrão para o dashboard patrimonial
+ * Padrão: Todos os blocos | Laboratórios | Aprovadas
+ */
+function definirFiltrosPadrao() {
+    console.log('🎯 Definindo filtros padrão para dashboard patrimonial');
+    
+    // Configurar filtros ativos
+    filtrosAtivos = {
+        bloco: 'todos',
+        tipoRecurso: 'laboratorio',
+        status: 'aprovada',
+        visualizacao: 'semana'
+    };
+    
+    // Os selects já têm os valores padrão definidos no HTML via 'selected'
+    // Apenas confirmar que estão sincronizados
+    setTimeout(() => {
+        const selectTipo = document.getElementById('filtro-tipo');
+        const selectStatus = document.getElementById('filtro-status');
+        
+        if (selectTipo) selectTipo.value = 'laboratorio';
+        if (selectStatus) selectStatus.value = 'aprovada';
+        
+        // Aplicar filtros padrão
+        aplicarFiltros();
+    }, 100);
+}
+
+/**
  * Carregar blocos disponíveis no filtro
  */
 async function carregarBlocosNoFiltro() {
     try {
         console.log('📋 Carregando blocos para o filtro...');
         
-        const resultado = await API.buscarLaboratorios();
+        const resultado = await API.buscarBlocos();
         
         if (resultado.sucesso && resultado.dados) {
             const selectBloco = document.getElementById('filtro-bloco');
             if (!selectBloco) return;
             
-            // Extrair blocos únicos
-            const blocosUnicos = [...new Set(resultado.dados.map(lab => lab.bloco))].sort();
-            
             // Limpar opções existentes (exceto "Todos")
             selectBloco.innerHTML = '<option value="todos">Todos os Blocos</option>';
             
             // Adicionar opções de blocos
-            blocosUnicos.forEach(bloco => {
-                if (bloco) {
+            resultado.dados.forEach(bloco => {
+                if (bloco.nome) {
                     const option = document.createElement('option');
-                    option.value = bloco;
-                    option.textContent = `Bloco ${bloco}`;
+                    option.value = bloco.nome;
+                    option.textContent = bloco.nome;
                     selectBloco.appendChild(option);
                 }
             });
             
-            console.log(`✅ ${blocosUnicos.length} blocos carregados no filtro`);
+            console.log(`✅ ${resultado.dados.length} blocos carregados no filtro`);
         }
     } catch (error) {
         console.error('❌ Erro ao carregar blocos para filtro:', error);
@@ -233,26 +262,28 @@ function mostrarFiltrosAplicados() {
  * Limpar todos os filtros
  */
 function limparFiltros() {
-    // Resetar selects com IDs corretos
+    console.log('🗑️ Aplicando filtros padrão do dashboard patrimonial');
+    
+    // Resetar selects para os valores padrão do dashboard patrimonial
     const selectBloco = document.getElementById('filtro-bloco');
     const selectTipo = document.getElementById('filtro-tipo');
     const selectStatus = document.getElementById('filtro-status');
     const selectVis = document.getElementById('filtro-visualizacao');
     
     if (selectBloco) selectBloco.value = 'todos';
-    if (selectTipo) selectTipo.value = 'todos';
-    if (selectStatus) selectStatus.value = 'todos';
+    if (selectTipo) selectTipo.value = 'laboratorio'; // Padrão: Laboratórios
+    if (selectStatus) selectStatus.value = 'aprovada'; // Padrão: Aprovadas
     if (selectVis) selectVis.value = 'semana';
     
-    // Resetar filtros para valores padrão
+    // Resetar filtros para valores padrão do dashboard patrimonial
     filtrosAtivos = {
         bloco: 'todos',
-        tipoRecurso: 'todos',
-        status: 'todos',
+        tipoRecurso: 'laboratorio',
+        status: 'aprovada',
         visualizacao: 'semana'
     };
     
-    console.log('🗑️ Filtros limpos');
+    console.log('✅ Filtros resetados para padrão do dashboard patrimonial');
     
     // Mudar visualização do calendário para padrão
     if (calendarioPatrimonial) {
@@ -301,9 +332,8 @@ function filtrarReservas(reservas) {
     // Filtro por bloco
     if (filtrosAtivos.bloco && filtrosAtivos.bloco !== 'todos') {
         reservasFiltradas = reservasFiltradas.filter(reserva => {
-            const blocoReserva = reserva.laboratorios?.bloco || 
-                                reserva.equipamentos?.[0]?.laboratorio?.bloco ||
-                                reserva.laboratorio?.bloco;
+            // Usar a função extrairBlocoRecurso para consistência
+            const blocoReserva = extrairBlocoRecurso(reserva);
             return blocoReserva === filtrosAtivos.bloco;
         });
         console.log(`📋 Após filtro bloco "${filtrosAtivos.bloco}":`, reservasFiltradas.length);
@@ -425,7 +455,7 @@ function inicializarCalendario() {
                             className: isReservaEmAndamento(reserva) ? 'fc-event-em-andamento' : '',
                             extendedProps: {
                                 reserva: reserva,
-                                bloco: reserva.laboratorios?.bloco || reserva.equipamentos?.[0]?.laboratorio?.bloco || 'N/A',
+                                bloco: extrairBlocoRecurso(reserva),
                                 tipo: reserva.laboratorios ? 'laboratorio' : 'equipamento',
                                 status: reserva.status
                             }
@@ -450,6 +480,32 @@ function inicializarCalendario() {
     });
     
     calendarioPatrimonial.render();
+}
+
+/**
+ * Verificar se a reserva está em andamento
+ */
+/**
+ * Extrair bloco do recurso usando dados do banco de dados
+ */
+function extrairBlocoRecurso(reserva) {
+    let bloco = 'N/A';
+    
+    // Se for laboratório
+    if (reserva.laboratorios) {
+        // Usar o nome do bloco vindo do banco de dados
+        bloco = reserva.laboratorios.blocos?.nome || 'N/A';
+    }
+    // Se for equipamento
+    else if (reserva.reserva_equipamentos && reserva.reserva_equipamentos.length > 0) {
+        const equipamento = reserva.reserva_equipamentos[0].equipamentos;
+        if (equipamento && equipamento.blocos) {
+            // Usar o nome do bloco do equipamento vindo do banco de dados
+            bloco = equipamento.blocos.nome || 'N/A';
+        }
+    }
+    
+    return bloco;
 }
 
 /**
@@ -518,7 +574,7 @@ function preencherTabelaReservas(tabelaId, reservas, contadorId) {
     if (!reservas || reservas.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="4" class="text-center text-muted py-4">
+                <td colspan="5" class="text-center text-muted py-4">
                     <i class="bi bi-calendar-x"></i><br>
                     Nenhuma reserva encontrada
                 </td>
@@ -534,6 +590,9 @@ function preencherTabelaReservas(tabelaId, reservas, contadorId) {
         const recurso = reserva.laboratorios ? reserva.laboratorios.nome : 
                        reserva.reserva_equipamentos?.[0]?.equipamentos?.nome || 'N/A';
         
+        // Extrair bloco do recurso ou usar informação específica
+        const bloco = extrairBlocoRecurso(reserva);
+        
         const statusClass = emAndamento ? 'reserva-em-andamento' : '';
         const statusTexto = emAndamento ? 
             '<span class="badge bg-success"><i class="bi bi-play-circle"></i> Em Andamento</span>' :
@@ -548,6 +607,9 @@ function preencherTabelaReservas(tabelaId, reservas, contadorId) {
                 <td>
                     <strong>${recurso}</strong><br>
                     <small class="text-muted">Protocolo: ${reserva.protocolo}</small>
+                </td>
+                <td class="text-center">
+                    <span class="badge bg-info text-wrap" style="font-size: 0.75rem;">${bloco}</span>
                 </td>
                 <td>
                     <strong>${reserva.nome_completo}</strong><br>
@@ -572,7 +634,7 @@ function mostrarErroTabela(tabelaId, mensagem) {
     if (tbody) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="4" class="text-center text-danger py-4">
+                <td colspan="5" class="text-center text-danger py-4">
                     <i class="bi bi-exclamation-triangle"></i><br>
                     ${mensagem}
                 </td>
@@ -636,7 +698,7 @@ function mostrarDetalhesReservaModal(reserva) {
     if (!modal || !content) return;
     
     const recurso = reserva.laboratorios ? 
-        `${reserva.laboratorios.nome} (${reserva.laboratorios.blocos?.nome || 'N/A'})` :
+        `${reserva.laboratorios.nome} (Bloco ${extrairBlocoRecurso(reserva)})` :
         reserva.reserva_equipamentos?.[0]?.equipamentos?.nome || 'N/A';
     
     const emAndamento = isReservaEmAndamento(reserva);
